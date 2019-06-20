@@ -45,6 +45,7 @@ exportMethods(
     ## Methods for generics defined in the base package:
     names, "names<-",
     as.vector,
+    summary,
 
     ## Methods for generics defined in the methods package:
     show, coerce,

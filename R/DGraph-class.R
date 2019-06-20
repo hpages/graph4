@@ -138,13 +138,13 @@ setReplaceMethod("nodes", "DGraph",
                   "the graph package before you try to coerce ",
                   "a ", class(from), " object to DGraph."))
 
-    if (edgemode(from) == "undirected")
+    if (graph::edgemode(from) == "undirected")
         stop(wmsg("Coercing an **undirected** ", class(from), " object ",
                   "to DGraph is not supported. ",
                   "Please set the edgemode of the object to \"directed\" ",
                   "(with 'edgemode(x) <- \"directed\"') before trying ",
                   "to coerce again."))
-    m <- edgeMatrix(from)
+    m <- graph::edgeMatrix(from)
     ans_from <- m[1L, ]
     ans_to <- m[2L, ]
     edges_mcols <- .attrData_as_DataFrame_or_NULL(from@edgeData)
@@ -198,7 +198,7 @@ setAs("graphNEL", "DGraph", .from_graphNEL_to_DGraph)
     ans_edgeL <- as.list(setNames(as(sh, "IntegerList"), ans_nodes))
     ans_edgeL <- lapply(ans_edgeL, function(edges) list(edges=edges))
 
-    ans <- graphNEL(ans_nodes, ans_edgeL, edgemode="directed")
+    ans <- graph::graphNEL(ans_nodes, ans_edgeL, edgemode="directed")
 
     ## 'edgeData' slot
     edge_mcols <- mcols(sh)
