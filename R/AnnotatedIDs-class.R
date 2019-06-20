@@ -10,6 +10,9 @@ setClass("AnnotatedIDs",
     representation(
         ID="vector"  # we could use "vector_OR_Vector" to support even more
                      # kinds of IDs at no cost
+    ),
+    prototype(
+        ID=integer(0)
     )
 )
 
@@ -29,7 +32,7 @@ setMethod("parallelSlotNames", "AnnotatedIDs",
 ### Constructor
 ###
 
-AnnotatedIDs <- function(IDs, ...)
+AnnotatedIDs <- function(IDs=integer(0), ...)
 {
     mcols <- DataFrame(..., check.names=FALSE)
     ans <- new2("AnnotatedIDs", ID=IDs, check=FALSE)

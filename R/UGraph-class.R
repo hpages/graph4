@@ -1,9 +1,9 @@
 ### =========================================================================
-### UGraph objects
+### UGraph objects (undirected graphs)
 ### -------------------------------------------------------------------------
 
 
-setClass("UGraph", contains="Graph")
+setClass("UGraph", contains="DGraph")
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -12,6 +12,6 @@ setClass("UGraph", contains="Graph")
 
 UGraph <- function(from=integer(0), to=integer(0), nodes=0, ...)
 {
-    new2("UGraph", Graph(from, to, nodes, ...), check=FALSE)
+    new2("UGraph", DGraph(from, to, nodes, ...), check=FALSE)
 }
 

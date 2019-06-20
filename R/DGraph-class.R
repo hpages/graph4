@@ -1,12 +1,15 @@
 ### =========================================================================
-### Graph objects
+### DGraph objects (directed graphs)
 ### -------------------------------------------------------------------------
 
 
-setClass("Graph",
+setClass("DGraph",
     contains="SelfHits",
     representation(
         nodes="Vector"
+    ),
+    prototype(
+        nodes=AnnotatedIDs()
     )
 )
 
@@ -15,7 +18,7 @@ setClass("Graph",
 ### Validity
 ###
 
-.validate_Graph <- function(x)
+.validate_DGraph <- function(x)
 {
     ## 'nodes' slot
     if (!is(x@nodes, "Vector"))
@@ -26,7 +29,7 @@ setClass("Graph",
     TRUE
 }
 
-setValidity2("Graph", .validate_Graph)
+setValidity2("DGraph", .validate_DGraph)
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -47,11 +50,11 @@ setValidity2("Graph", .validate_Graph)
     AnnotatedIDs(nodes)
 }
 
-Graph <- function(from=integer(0), to=integer(0), nodes=0, ...)
+DGraph <- function(from=integer(0), to=integer(0), nodes=0, ...)
 {
     nodes <- .normarg_nodes(nodes)
     sh <- SelfHits(from, to, nnode=length(nodes), ...)
-    new2("Graph", sh, nodes=nodes, check=FALSE)
+    new2("DGraph", sh, nodes=nodes, check=FALSE)
 }
 
 
@@ -64,9 +67,9 @@ Graph <- function(from=integer(0), to=integer(0), nodes=0, ...)
 setGeneric("nodes", function(object, ...) standardGeneric("nodes"))
 setGeneric("nodes<-", function(object, value) standardGeneric("nodes<-"))
 
-setMethod("nodes", "Graph", function(object) object@nodes)
+setMethod("nodes", "DGraph", function(object) object@nodes)
 
-setReplaceMethod("nodes", "Graph",
+setReplaceMethod("nodes", "DGraph",
     function(object, value)
     {
         object_nnode <- nnode(object)
@@ -89,29 +92,29 @@ setReplaceMethod("nodes", "Graph",
 ### Coercion
 ###
 
-### Uses 'edgeDataDefaults()' and 'edgeData()'.
-### NOTE: 'edgeData()' is quite slow AND is broken on graphNEL objects
+### Uses 'graph::edgeDataDefaults()' and 'graph::edgeData()'.
+### NOTE: 'graph::edgeData()' is quite slow AND is broken on graphNEL objects
 ### with "repeated" edges (i.e. with more than 1 edge between the same
 ### 2 nodes). So do NOT use!
 .edgeData_as_DataFrame_or_NULL <- function(from)
 {
-    ans_colnames <- names(edgeDataDefaults(from))
+    ans_colnames <- names(graph::edgeDataDefaults(from))
     if (length(ans_colnames) == 0L)
         return(NULL)
     S4Vectors:::new_DataFrame(
         lapply(setNames(ans_colnames, ans_colnames),
-               function(colname) unname(edgeData(from, attr=colname))))
+               function(colname) unname(graph::edgeData(from, attr=colname))))
 }
 
 ### Same problem as described above.
 .nodeData_as_DataFrame_or_NULL <- function(from)
 {
-    ans_colnames <- names(nodeDataDefaults(from))
+    ans_colnames <- names(graph::nodeDataDefaults(from))
     if (length(ans_colnames) == 0L)
         return(NULL)
     S4Vectors:::new_DataFrame(
         lapply(setNames(ans_colnames, ans_colnames),
-               function(colname) unname(nodeData(from, attr=colname))))
+               function(colname) unname(graph::nodeData(from, attr=colname))))
 }
 
 ### '.attrData_as_DataFrame_or_NULL(from@edgeData)' is equivalent but **much**
@@ -128,16 +131,16 @@ setReplaceMethod("nodes", "Graph",
         nrows=length(data))
 }
 
-.from_graphNEL_to_Graph <- function(from)
+.from_graphNEL_to_DGraph <- function(from)
 {
     if (!requireNamespace("graph", quietly=TRUE))
         stop(wmsg("Couldn't load the graph package. Please install ",
                   "the graph package before you try to coerce ",
-                  "a ", class(from), " object to Graph."))
+                  "a ", class(from), " object to DGraph."))
 
     if (edgemode(from) == "undirected")
         stop(wmsg("Coercing an **undirected** ", class(from), " object ",
-                  "to Graph is not supported. ",
+                  "to DGraph is not supported. ",
                   "Please set the edgemode of the object to \"directed\" ",
                   "(with 'edgemode(x) <- \"directed\"') before trying ",
                   "to coerce again."))
@@ -147,7 +150,7 @@ setReplaceMethod("nodes", "Graph",
     edges_mcols <- .attrData_as_DataFrame_or_NULL(from@edgeData)
     nodes_mcols <- .attrData_as_DataFrame_or_NULL(from@nodeData)
     ans_nodes <- AnnotatedIDs(from@nodes, nodes_mcols)
-    ans <- Graph(ans_from, ans_to, ans_nodes, edges_mcols)
+    ans <- DGraph(ans_from, ans_to, ans_nodes, edges_mcols)
 
     metadata(ans) <- list(edgeData_defaults=from@edgeData@defaults,
                           nodeData_defaults=from@nodeData@defaults,
@@ -155,7 +158,7 @@ setReplaceMethod("nodes", "Graph",
                           renderInfo=from@renderInfo)
     ans
 }
-setAs("graphNEL", "Graph", .from_graphNEL_to_Graph)
+setAs("graphNEL", "DGraph", .from_graphNEL_to_DGraph)
 
 .prepare_attrData <- function(mcols, defaults)
 {
@@ -181,12 +184,12 @@ setAs("graphNEL", "Graph", .from_graphNEL_to_Graph)
     list(data, defaults)
 }
 
-.from_Graph_to_graphNEL <- function(from)
+.from_DGraph_to_graphNEL <- function(from)
 {
     if (!requireNamespace("graph", quietly=TRUE))
         stop(wmsg("Couldn't load the graph package. Please install ",
                   "the graph package before you try to coerce ",
-                  "a Graph object to ", class(from), "."))
+                  "a ", class(from), " object to graphNEL."))
 
     from_nodes <- nodes(from)
     ans_nodes <- as.character(from_nodes)
@@ -230,14 +233,14 @@ setAs("graphNEL", "Graph", .from_graphNEL_to_Graph)
 
     ans
 }
-setAs("Graph", "graphNEL", .from_Graph_to_graphNEL)
+setAs("DGraph", "graphNEL", .from_DGraph_to_graphNEL)
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Show
 ###
 
-.Graph_summary <- function(object)
+.DGraph_summary <- function(object)
 {
     object_len <- length(object)
     object_mcols <- mcols(object, use.names=FALSE)
@@ -247,10 +250,10 @@ setAs("Graph", "graphNEL", .from_Graph_to_graphNEL)
            " and ", object_nmc, " metadata ",
            ifelse(object_nmc == 1L, "column", "columns"))
 }
-### S3/S4 combo for summary.Graph
-summary.Graph <- function(object, ...)
-    .Graph_summary(object, ...)
-setMethod("summary", "Graph", summary.Graph)
+### S3/S4 combo for summary.DGraph
+summary.DGraph <- function(object, ...)
+    .DGraph_summary(object, ...)
+setMethod("summary", "DGraph", summary.DGraph)
 
 ### TODO: Print a bottom line like for Factor objects e.g. something like:
 ###   Nodes: IRanges object of length 10
@@ -266,7 +269,7 @@ setGeneric("adjacencyMatrix",
     function(object) standardGeneric("adjacencyMatrix")
 )
 
-setMethod("adjacencyMatrix", "Graph",
+setMethod("adjacencyMatrix", "DGraph",
     function(object)
     {
         object_nodes <- nodes(object)
