@@ -5,10 +5,12 @@
 \alias{DGraph-class}
 \alias{DGraph}
 
+\alias{numNodes}
+\alias{numNodes,DGraph-method}
 \alias{nodes}
 \alias{nodes,DGraph-method}
 \alias{nodes<-}
-\alias{nodes<-,DGraph-method}
+\alias{nodes<-,DGraph,ANY-method}
 
 \alias{coerce,graphNEL,DGraph-method}
 \alias{coerce,DGraph,graphNEL-method}
@@ -45,7 +47,7 @@ DGraph(from=integer(0), to=integer(0), nodes=0, ...)
     A \emph{vector-like object} containing the nodes.
   }
   \item{...}{
-    Optional metadata columns to be attached to the edges.
+    Optional metadata columns to attach to the returned DGraph object.
   }
 }
 
@@ -60,7 +62,7 @@ DGraph(from=integer(0), to=integer(0), nodes=0, ...)
 \section{Accessors}{
   Because DGraph objects are \link[S4Vectors]{SelfHits} derivatives (i.e.
   DGraph is a subclass of the \link[S4Vectors]{SelfHits} class defined in
-  the \pkg{S4Vectors} package), they support all the same set of accessors
+  the \pkg{S4Vectors} package), they support the same set of accessors
   as \link[S4Vectors]{SelfHits} objects.
 
   In addition they support the \code{nodes()} accessor to get or set the

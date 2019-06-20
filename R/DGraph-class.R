@@ -62,13 +62,14 @@ DGraph <- function(from=integer(0), to=integer(0), nodes=0, ...)
 ### Accessors
 ###
 
-### Clash with generics of same name defined in the graph package.
-### FIXME: Define these generics in BiocGenerics.
-setGeneric("nodes", function(object, ...) standardGeneric("nodes"))
-setGeneric("nodes<-", function(object, value) standardGeneric("nodes<-"))
+### Generic defined in the graph package.
+### Equivalent to 'nnode(x)'.
+setMethod("numNodes", "DGraph", function(object) length(object@nodes))
 
+### Generic defined in the graph package.
 setMethod("nodes", "DGraph", function(object) object@nodes)
 
+### Generic defined in the graph package.
 setReplaceMethod("nodes", "DGraph",
     function(object, value)
     {
@@ -263,12 +264,7 @@ setMethod("summary", "DGraph", summary.DGraph)
 ### adjacencyMatrix()
 ###
 
-### Clash with generic of same name defined in the graph package.
-### FIXME: Define this generic in BiocGenerics.
-setGeneric("adjacencyMatrix",
-    function(object) standardGeneric("adjacencyMatrix")
-)
-
+### Generic defined in the graph package.
 setMethod("adjacencyMatrix", "DGraph",
     function(object)
     {

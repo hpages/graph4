@@ -4,6 +4,9 @@ importFrom(Matrix, sparseMatrix)
 import(BiocGenerics)
 import(S4Vectors)
 import(IRanges)
+import(graph)  # for generic functions nodes(), numNodes(), adjacencyMatrix(),
+               # etc... (but ideally these should be defined in BiocGenerics
+               # or maybe in a GraphGenerics package)
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -46,12 +49,19 @@ exportMethods(
     names, "names<-",
     as.vector,
     summary,
+    xtfrm,
 
     ## Methods for generics defined in the methods package:
     show, coerce,
 
+    ## Methods for generics defined in the BiocGenerics package:
+    match,
+
     ## Methods for generics defined in the S4Vectors package:
-    parallelSlotNames
+    parallelSlotNames, pcompare, selfmatch,
+
+    ## Methods for generics defined in the graph package:
+    numNodes, nodes, "nodes<-", adjacencyMatrix
 )
 
 
@@ -76,12 +86,12 @@ export(
 ###
 
 export(
-    ## DGraph-class.R:
-    nodes, "nodes<-", adjacencyMatrix
+    ## AnnotatedIDs-class.R:
+    ID
 )
 
 ### Exactly the same list as above.
 exportMethods(
-    nodes, "nodes<-", adjacencyMatrix
+    ID
 )
 

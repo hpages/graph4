@@ -8,8 +8,13 @@
 setClass("AnnotatedIDs",
     contains="Vector",
     representation(
-        ID="vector"  # we could use "vector_OR_Vector" to support even more
-                     # kinds of IDs at no cost
+        ID="vector"  # We could use "vector_OR_Vector" to support wrapping
+                     # any Vector derivative at no extra cost. Note that
+                     # wrapping data-frame-like objects (e.g. data.frame
+                     # or DataFrame) turns it into an AnnotatedIDs object
+                     # of length the number of **rows**! As a consequence,
+                     # the metadata columns of the AnnotatedIDs object are
+                     # annotating the **rows** of the data-frame-like object.
     ),
     prototype(
         ID=integer(0)
@@ -46,12 +51,19 @@ AnnotatedIDs <- function(IDs=integer(0), ...)
 ### Accessors
 ###
 
-setMethod("names", "AnnotatedIDs", function(x) names(x@ID))
+setGeneric("ID", function(x) standardGeneric("ID"))
+setMethod("ID", "AnnotatedIDs", function(x) x@ID)
+
+setMethod("names", "AnnotatedIDs", function(x) ROWNAMES(x@ID))
 
 setReplaceMethod("names", "AnnotatedIDs",
     function(x, value)
     {
-        names(x@ID) <- value
+        if (length(dim(x@ID)) < 2L) {
+            names(x@ID) <- value
+        } else {
+            rownames(x@ID) <- value
+        }
         x
     }
 )
@@ -75,7 +87,9 @@ setMethod("as.vector", "AnnotatedIDs",
     x_len <- length(x)
     x_mcols <- mcols(x, use.names=FALSE)
     x_nmc <- if (is.null(x_mcols)) 0L else ncol(x_mcols)
-    ans <- cbind(ID=as.character(x@ID))
+    ## Use showAsCell(() rather than as.character() (the latter won't do
+    ## the right thing if 'x@ID' is a data-frame-like object).
+    ans <- cbind(ID=showAsCell(x@ID))
     if (x_nmc > 0L) {
         tmp <- as.data.frame(lapply(x_mcols, showAsCell), optional=TRUE)
         ans <- cbind(ans, `|`=rep.int("|", x_len), as.matrix(tmp))
@@ -117,4 +131,26 @@ setMethod("show", "AnnotatedIDs",
     function(object)
         .show_AnnotatedIDs(object, print.classinfo=TRUE)
 )
+
+
+### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Comparing and ordering
+###
+
+setMethod("pcompare", c("AnnotatedIDs", "AnnotatedIDs"),
+    function(x, y) pcompare(x@ID, y@ID)
+)
+
+setMethod("match", c("AnnotatedIDs", "AnnotatedIDs"),
+    function(x, table, nomatch=NA_integer_, incomparables=NULL, ...)
+    {
+        x <- x@ID
+        table <- table@ID
+        callGeneric()
+    }
+)
+
+setMethod("selfmatch", "AnnotatedIDs", function(x, ...) selfmatch(x@ID, ...))
+
+setMethod("xtfrm", "AnnotatedIDs", function(x) xtfrm(x@ID))
 
