@@ -1,0 +1,19 @@
+Package: graphs
+Title: Efficient graph representation and manipulation in Bioconductor
+Description: Implements classes for representing and manipulating directed
+	and undirected graphs (Graph and UGraph classes). Both the edges
+	and nodes of a Graph or UGraph object can be annotated via the use
+	of "metadata columns".
+Version: 0.0.1
+Encoding: UTF-8
+Author: Hervé Pagès <hpages@fredhutch.org>
+Maintainer: Hervé Pagès <hpages@fredhutch.org>
+biocViews: Infrastructure, DataRepresentation, GraphAndNetwork, Annotation,
+	GenomeAnnotation
+Depends: methods, Matrix, BiocGenerics, S4Vectors (>= 0.23.15), IRanges
+Imports: stats
+Suggests: graph
+License: Artistic-2.0
+Collate: AnnotatedIDs-class.R
+	Graph-class.R
+	UGraph-class.R
