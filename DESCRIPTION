@@ -12,6 +12,7 @@ biocViews: Infrastructure, DataRepresentation, GraphAndNetwork, Annotation,
 	GenomeAnnotation
 Depends: methods, Matrix, BiocGenerics, S4Vectors (>= 0.23.15), graph
 Imports: stats, IRanges
+Suggests: Rgraphviz
 License: Artistic-2.0
 Collate: AnnotatedIDs-class.R
 	DGraph-class.R

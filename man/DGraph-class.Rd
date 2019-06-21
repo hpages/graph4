@@ -11,6 +11,12 @@
 \alias{nodes,DGraph-method}
 \alias{nodes<-}
 \alias{nodes<-,DGraph,ANY-method}
+\alias{isDirected}
+\alias{isDirected,DGraph-method}
+\alias{edgemode}
+\alias{edgemode,DGraph-method}
+\alias{edgemode<-}
+\alias{edgemode<-,DGraph,ANY-method}
 
 \alias{coerce,graphNEL,DGraph-method}
 \alias{coerce,DGraph,graphNEL-method}
@@ -32,19 +38,26 @@
 
 \usage{
 ## Constructor function
-DGraph(from=integer(0), to=integer(0), nodes=0, ...)
+DGraph(nodes, from=integer(0), to=integer(0), ...)
 }
 
 \arguments{
+  \item{nodes}{
+    A \emph{vector-like object} containing the nodes.
+    This can be any \link[S4Vectors]{Vector} derivative.
+    This can also be an ordinary vector (e.g. a character vector),
+    in which case it will be wrapped in an \link{AnnotatedIDs}
+    object (with \code{AnnotatedIDs(nodes)}).
+
+    A special case is when \code{nodes} is a single number: in that case
+    the nodes will be generated with \code{AnnotatedIDs(seq_len(nodes))}.
+  }
   \item{from, to}{
     Two integer vectors of the same length describing the edges.
     The values in each vector must be valid node indices.
     The pair formed by \code{from[i]} and \code{to[i]} represents
     an edge that goes from node \code{nodes[from[i]]} to node
     \code{nodes[to[i]]}.
-  }
-  \item{nodes}{
-    A \emph{vector-like object} containing the nodes.
   }
   \item{...}{
     Optional metadata columns to attach to the returned DGraph object.
@@ -62,17 +75,30 @@ DGraph(from=integer(0), to=integer(0), nodes=0, ...)
 \section{Accessors}{
   Because DGraph objects are \link[S4Vectors]{SelfHits} derivatives (i.e.
   DGraph is a subclass of the \link[S4Vectors]{SelfHits} class defined in
-  the \pkg{S4Vectors} package), they support the same set of accessors
-  as \link[S4Vectors]{SelfHits} objects.
+  the \pkg{S4Vectors} package), they support the same set of getters and
+  setters as \link[S4Vectors]{SelfHits} objects.
 
-  In addition they support the \code{nodes()} accessor to get or set the
-  nodes.
+  In addition they support the following graph-specific getters:
+  \itemize{
+    \item \code{numNodes(x)}: same as \code{nnode{x}} (provided for
+          compatibility with the \pkg{graph} package)
+    \item \code{nodes(x)}: get the nodes
+    \item \code{isDirected(x)}: whether the object is \emph{directed}
+          or not
+    \item \code{edgemode(x)}: returns \code{"directed"} or
+          \code{"undirected"}
+  }
+  and setters:
+  \itemize{
+    \item \code{nodes(x) <- value}: replace the current nodes
+    \item \code{edgemode(x) <- value}: set the \emph{edgemode}
+  }
 }
 
 \section{Subsetting}{
   A DGraph object can be subsetted with \code{[}, like any vector-like
-  object. Note that this subsets the set of edges. It doesn't modify the
-  set of nodes.
+  object. Note that this only subsets the set of edges i.e. all the nodes
+  are preserved.
 }
 
 \section{Concatenation}{
@@ -106,10 +132,14 @@ DGraph(from=integer(0), to=integer(0), nodes=0, ...)
 
 \seealso{
   \itemize{
+    \item \link{AnnotatedIDs} objects.
+
     \item \link[S4Vectors]{SelfHits} objects in the \pkg{S4Vectors} package
           for the parent class.
 
     \item \link[graph]{graphNEL} objects in the \pkg{graph} package.
+
+    \item \code{\link[Rgraphviz]{agopen}} in the \pkg{Rgraphviz} package.
   }
 }
 
@@ -120,32 +150,58 @@ showClass("DGraph")  # DGraph extends SelfHits
 ## CONSTRUCTOR & ACCESSORS
 ## ---------------------------------------------------------------------
 
-g1 <- DGraph(1:4, 4:1, nodes=4, weights=runif(4))
+## A directed graph with 10 nodes and no edges:
+g0 <- DGraph(nodes=letters[1:10])
+g0
+
+## A directed graph with 8 nodes and 9 edges:
+g1 <- DGraph(nodes=8, c(1, 1:5, 6, 6, 6), c(6, 8:4, 1:2, 7),
+                      weights=0.11*(1:9))
 g1
 
 length(g1)  # number of edges
-nnode(g1)   # number of nodes
-
-names(g1)   # names of the edges
 mcols(g1)   # metadata columns on the edges (1 row per edge)
 
+nnode(g1)   # number of nodes (same as 'numNodes(g1)')
 nodes(g1)   # the nodes
-names(nodes(g1))  # names of the nodes
-mcols(nodes(g1))  # metadata columns on the nodes (1 row per node)
+
+## Set some names and metadata columns on the nodes:
+names(nodes(g1)) <- LETTERS[1:8]
+mcols(nodes(g1))$score <- runif(8)
+nodes(g1)
 
 ## ---------------------------------------------------------------------
 ## COERCION
 ## ---------------------------------------------------------------------
 
+## Coercing to data.frame or DataFrame looses the node information:
 as.data.frame(g1)
+as(g1, "DataFrame")
+
+## Coerce to a graphNEL instance from the graph package:
+gnel <- as(g1, "graphNEL")
+gnel
+
+## The graphNEL instance can be used to plot the graph with the
+## Rgraphviz package:
+library(Rgraphviz)
+plot(agopen(gnel, "g1"))
+plot(agopen(gnel, "g1", recipEdges="distinct"))
+
+## TODO: More coercions to come soon (to DGraph<->graphAM,
+## DGraph<->graphBAM, DGraph<->igraph, etc...)
 
 ## ---------------------------------------------------------------------
 ## CONCATENATION
 ## ---------------------------------------------------------------------
 
+## TODO
+
 ## ---------------------------------------------------------------------
 ## COMPARING & ORDERING
 ## ---------------------------------------------------------------------
+
+## TODO
 
 ## ---------------------------------------------------------------------
 ## ADJACENCY MATRIX

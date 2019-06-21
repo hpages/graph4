@@ -50,7 +50,7 @@ setValidity2("DGraph", .validate_DGraph)
     AnnotatedIDs(nodes)
 }
 
-DGraph <- function(from=integer(0), to=integer(0), nodes=0, ...)
+DGraph <- function(nodes, from=integer(0), to=integer(0), ...)
 {
     nodes <- .normarg_nodes(nodes)
     sh <- SelfHits(from, to, nnode=length(nodes), ...)
@@ -85,6 +85,26 @@ setReplaceMethod("nodes", "DGraph",
         }
         object@nodes <- value
         object
+    }
+)
+
+setMethod("isDirected", "DGraph",
+    function(object) !is(object, "UGraph")
+)
+
+setMethod("edgemode", "DGraph",
+    function(object) if (isDirected(object)) "directed" else "undirected"
+)
+
+setReplaceMethod("edgemode", c("DGraph", "ANY"),
+    function(object, value)
+    {
+        if (!(isSingleString(value) && value %in% c("directed", "undirected")))
+            stop(wmsg("edgemode must be \"directed\" or \"undirected\""))
+        if (edgemode(object) == value)
+            return(object)
+        to_class <- if (value == "directed") "DGraph" else "UGraph"
+        as(object, to_class)
     }
 )
 
@@ -151,7 +171,7 @@ setReplaceMethod("nodes", "DGraph",
     edges_mcols <- .attrData_as_DataFrame_or_NULL(from@edgeData)
     nodes_mcols <- .attrData_as_DataFrame_or_NULL(from@nodeData)
     ans_nodes <- AnnotatedIDs(from@nodes, nodes_mcols)
-    ans <- DGraph(ans_from, ans_to, ans_nodes, edges_mcols)
+    ans <- DGraph(ans_nodes, ans_from, ans_to, edges_mcols)
 
     metadata(ans) <- list(edgeData_defaults=from@edgeData@defaults,
                           nodeData_defaults=from@nodeData@defaults,
