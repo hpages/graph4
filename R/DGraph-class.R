@@ -257,6 +257,29 @@ setAs("ngCMatrix", "DGraph",
 }
 setAs("graphNEL", "DGraph", .from_graphNEL_to_DGraph)
 
+.make_graphNEL_nodes <- function(from)
+{
+    from_nodes <- nodes(from)
+    ans_nodes <- names(from_nodes)
+    if (is.null(ans_nodes)) {
+        ## Unlike as.character(), showAsCell() is guaranted to produce a
+        ## character vector **parallel** to its argument (i.e. with one
+        ## string per ROW). For example as.character() won't do the right
+        ## thing on a DNAString object.
+        ans_nodes <- showAsCell(from_nodes)
+    }
+    ## The graphNEL() constructor function will fail (with error "Node names
+    ## may not be duplicated") if the character vector supplied to its 'nodes'
+    ## argument contains duplicates. By checking this upfront, we can provide
+    ## a more useful error message.
+    if (anyDuplicated(ans_nodes))
+        stop(c(wmsg("graphNEL objects don't support duplicated node names. ",
+                    "Please set unique node names on the ",
+                    class(from), " object to coerce to graphNEL."),
+                    "\n  For example: names(nodes(x)) <- seq_along(nodes(x))"))
+    ans_nodes
+}
+
 .prepare_attrData <- function(mcols, defaults)
 {
     data <- lapply(seq_len(nrow(mcols)),
@@ -283,8 +306,7 @@ setAs("graphNEL", "DGraph", .from_graphNEL_to_DGraph)
 
 .from_DGraph_to_graphNEL <- function(from)
 {
-    from_nodes <- nodes(from)
-    ans_nodes <- as.character(from_nodes)
+    ans_nodes <- .make_graphNEL_nodes(from)
 
     sh <- as(from, "SortedByQuerySelfHits")
     ans_edgeL <- as.list(setNames(as(sh, "IntegerList"), ans_nodes))
@@ -305,7 +327,7 @@ setAs("graphNEL", "DGraph", .from_graphNEL_to_DGraph)
     }
 
     ## 'nodeData' slot
-    node_mcols <- mcols(from_nodes)
+    node_mcols <- mcols(nodes(from))
     if (!is.null(node_mcols)) {
         nodeData <- .prepare_attrData(node_mcols,
                                       metadata(from)$nodeData_defaults)
