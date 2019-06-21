@@ -88,14 +88,17 @@ setReplaceMethod("nodes", "DGraph",
     }
 )
 
+### Generic defined in the graph package.
 setMethod("isDirected", "DGraph",
     function(object) !is(object, "UGraph")
 )
 
+### Generic defined in the graph package.
 setMethod("edgemode", "DGraph",
     function(object) if (isDirected(object)) "directed" else "undirected"
 )
 
+### Generic defined in the graph package.
 setReplaceMethod("edgemode", c("DGraph", "ANY"),
     function(object, value)
     {
@@ -108,34 +111,57 @@ setReplaceMethod("edgemode", c("DGraph", "ANY"),
     }
 )
 
+.drop_duplicated_edges_from_undirected_graph <- function(x)
+{
+    flip_idx <- which(from(x) > to(x))
+    if (length(flip_idx) != 0L) {
+        tmp <- x@from[flip_idx]
+        x@from[flip_idx] <- x@to[flip_idx]
+        x@to[flip_idx] <- tmp
+    }
+    unique(x)
+}
+
+### Generic defined in the graph package.
+setMethod("edgeMatrix", "DGraph",
+    function(object, duplicates=FALSE)
+    {
+        if (!isTRUEorFALSE(duplicates))
+            stop(wmsg("'duplicates' must be TRUE or FALSE"))
+        if (!(duplicates || isDirected(object)))
+            object <- .drop_duplicated_edges_from_undirected_graph(object)
+        rbind(from=from(object), to=to(object))
+    }
+)
+
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Coercion
 ###
 
-### Uses 'graph::edgeDataDefaults()' and 'graph::edgeData()'.
-### NOTE: 'graph::edgeData()' is quite slow AND is broken on graphNEL objects
+### Uses 'edgeDataDefaults()' and 'edgeData()'.
+### NOTE: 'edgeData()' is quite slow AND is broken on graphNEL objects
 ### with "repeated" edges (i.e. with more than 1 edge between the same
 ### 2 nodes). So do NOT use!
 .edgeData_as_DataFrame_or_NULL <- function(from)
 {
-    ans_colnames <- names(graph::edgeDataDefaults(from))
+    ans_colnames <- names(edgeDataDefaults(from))
     if (length(ans_colnames) == 0L)
         return(NULL)
     S4Vectors:::new_DataFrame(
         lapply(setNames(ans_colnames, ans_colnames),
-               function(colname) unname(graph::edgeData(from, attr=colname))))
+               function(colname) unname(edgeData(from, attr=colname))))
 }
 
 ### Same problem as described above.
 .nodeData_as_DataFrame_or_NULL <- function(from)
 {
-    ans_colnames <- names(graph::nodeDataDefaults(from))
+    ans_colnames <- names(nodeDataDefaults(from))
     if (length(ans_colnames) == 0L)
         return(NULL)
     S4Vectors:::new_DataFrame(
         lapply(setNames(ans_colnames, ans_colnames),
-               function(colname) unname(graph::nodeData(from, attr=colname))))
+               function(colname) unname(nodeData(from, attr=colname))))
 }
 
 ### '.attrData_as_DataFrame_or_NULL(from@edgeData)' is equivalent but **much**
@@ -154,18 +180,13 @@ setReplaceMethod("edgemode", c("DGraph", "ANY"),
 
 .from_graphNEL_to_DGraph <- function(from)
 {
-    if (!requireNamespace("graph", quietly=TRUE))
-        stop(wmsg("Couldn't load the graph package. Please install ",
-                  "the graph package before you try to coerce ",
-                  "a ", class(from), " object to DGraph."))
-
-    if (graph::edgemode(from) == "undirected")
+    if (!isDirected(from))
         stop(wmsg("Coercing an **undirected** ", class(from), " object ",
-                  "to DGraph is not supported. ",
+                  "to DGraph is not supported yet. ",
                   "Please set the edgemode of the object to \"directed\" ",
                   "(with 'edgemode(x) <- \"directed\"') before trying ",
                   "to coerce again."))
-    m <- graph::edgeMatrix(from)
+    m <- edgeMatrix(from)
     ans_from <- m[1L, ]
     ans_to <- m[2L, ]
     edges_mcols <- .attrData_as_DataFrame_or_NULL(from@edgeData)
@@ -207,11 +228,6 @@ setAs("graphNEL", "DGraph", .from_graphNEL_to_DGraph)
 
 .from_DGraph_to_graphNEL <- function(from)
 {
-    if (!requireNamespace("graph", quietly=TRUE))
-        stop(wmsg("Couldn't load the graph package. Please install ",
-                  "the graph package before you try to coerce ",
-                  "a ", class(from), " object to graphNEL."))
-
     from_nodes <- nodes(from)
     ans_nodes <- as.character(from_nodes)
 
@@ -219,7 +235,7 @@ setAs("graphNEL", "DGraph", .from_graphNEL_to_DGraph)
     ans_edgeL <- as.list(setNames(as(sh, "IntegerList"), ans_nodes))
     ans_edgeL <- lapply(ans_edgeL, function(edges) list(edges=edges))
 
-    ans <- graph::graphNEL(ans_nodes, ans_edgeL, edgemode="directed")
+    ans <- graphNEL(ans_nodes, ans_edgeL, edgemode="directed")
 
     ## 'edgeData' slot
     edge_mcols <- mcols(sh)
@@ -296,5 +312,36 @@ setMethod("adjacencyMatrix", "DGraph",
         sparseMatrix(from(object), to(object), dims=ans_dim,
                      dimnames=ans_dimnames)
     }
+)
+
+
+### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### connComp()
+###
+
+### Always treats 'x' as an **undirected** graph.
+### Returns the connected components in an IntegerList object
+### where each list element is strictly sorted.
+.connComp_DGraph <- function(x)
+{
+    x <- as(x, "SelfHits")
+    x <- union(x, t(x))
+    x_from <- from(x)
+    x_to <- to(x)
+    N <- nnode(x)
+    cid <- cid0 <- seq_len(N)  # cluster ids
+    repeat {
+        cid2 <- pmin(cid, selectHits(x, "first"))
+        if (identical(cid2, cid))
+            break
+        cid <- cid2
+        x <- Hits(x_from, cid[x_to], N, N)
+    }
+    unname(splitAsList(cid0, cid))
+}
+
+### Generic defined in the graph package.
+setMethod("connComp", "DGraph",
+    function(object) .connComp_DGraph(object)
 )
 

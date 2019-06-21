@@ -17,6 +17,8 @@
 \alias{edgemode,DGraph-method}
 \alias{edgemode<-}
 \alias{edgemode<-,DGraph,ANY-method}
+\alias{edgeMatrix}
+\alias{edgeMatrix,DGraph-method}
 
 \alias{coerce,graphNEL,DGraph-method}
 \alias{coerce,DGraph,graphNEL-method}
@@ -26,6 +28,8 @@
 
 \alias{adjacencyMatrix}
 \alias{adjacencyMatrix,DGraph-method}
+\alias{connComp}
+\alias{connComp,DGraph-method}
 
 \title{DGraph objects}
 
@@ -151,42 +155,42 @@ showClass("DGraph")  # DGraph extends SelfHits
 ## ---------------------------------------------------------------------
 
 ## A directed graph with 10 nodes and no edges:
-g0 <- DGraph(nodes=letters[1:10])
-g0
+dg0 <- DGraph(nodes=letters[1:10])
+dg0
 
 ## A directed graph with 8 nodes and 9 edges:
-g1 <- DGraph(nodes=8, c(1, 1:5, 6, 6, 6), c(6, 8:4, 1:2, 7),
-                      weights=0.11*(1:9))
-g1
+dg1 <- DGraph(nodes=8, c(1, 1:5, 6, 6, 6), c(6, 8:4, 1:2, 7),
+                       weights=0.11*(1:9))
+dg1
 
-length(g1)  # number of edges
-mcols(g1)   # metadata columns on the edges (1 row per edge)
+length(dg1)  # number of edges
+mcols(dg1)   # metadata columns on the edges (1 row per edge)
 
-nnode(g1)   # number of nodes (same as 'numNodes(g1)')
-nodes(g1)   # the nodes
+nnode(dg1)   # number of nodes (same as 'numNodes(dg1)')
+nodes(dg1)   # the nodes
 
 ## Set some names and metadata columns on the nodes:
-names(nodes(g1)) <- LETTERS[1:8]
-mcols(nodes(g1))$score <- runif(8)
-nodes(g1)
+names(nodes(dg1)) <- LETTERS[1:8]
+mcols(nodes(dg1))$score <- runif(8)
+nodes(dg1)
 
 ## ---------------------------------------------------------------------
 ## COERCION
 ## ---------------------------------------------------------------------
 
 ## Coercing to data.frame or DataFrame looses the node information:
-as.data.frame(g1)
-as(g1, "DataFrame")
+as.data.frame(dg1)
+as(dg1, "DataFrame")
 
 ## Coerce to a graphNEL instance from the graph package:
-gnel <- as(g1, "graphNEL")
+gnel <- as(dg1, "graphNEL")
 gnel
 
 ## The graphNEL instance can be used to plot the graph with the
 ## Rgraphviz package:
 library(Rgraphviz)
-plot(agopen(gnel, "g1"))
-plot(agopen(gnel, "g1", recipEdges="distinct"))
+plot(agopen(gnel, "dg1"))
+plot(agopen(gnel, "dg1", recipEdges="distinct"))
 
 ## TODO: More coercions to come soon (to DGraph<->graphAM,
 ## DGraph<->graphBAM, DGraph<->igraph, etc...)
@@ -204,10 +208,12 @@ plot(agopen(gnel, "g1", recipEdges="distinct"))
 ## TODO
 
 ## ---------------------------------------------------------------------
-## ADJACENCY MATRIX
+## ADJACENCY MATRIX & CONNECTED COMPONENTS
 ## ---------------------------------------------------------------------
 
-adjacencyMatrix(g1)
+adjacencyMatrix(dg1)
+
+connComp(dg1)
 }
 \keyword{methods}
 \keyword{classes}

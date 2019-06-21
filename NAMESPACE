@@ -62,8 +62,8 @@ exportMethods(
 
     ## Methods for generics defined in the graph package:
     numNodes, nodes, "nodes<-",
-    isDirected, edgemode, "edgemode<-",
-    adjacencyMatrix
+    isDirected, edgemode, "edgemode<-", edgeMatrix,
+    adjacencyMatrix, connComp
 )
 
 
