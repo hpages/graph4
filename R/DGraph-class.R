@@ -139,6 +139,17 @@ setMethod("edgeMatrix", "DGraph",
 ### Coercion
 ###
 
+### Note that the 'from' argument below is the standard argument for
+### coercion methods. It should not be confused with the 'from()' accessor
+### for DGraph objects!
+setAs("SelfHits", "DGraph",
+    function(from)
+    {
+        nodes <- AnnotatedIDs(seq_len(nnode(from)))
+        new2("DGraph", from, nodes=nodes, check=FALSE)
+    }
+)
+
 ### Uses 'edgeDataDefaults()' and 'edgeData()'.
 ### NOTE: 'edgeData()' is quite slow AND is broken on graphNEL objects
 ### with "repeated" edges (i.e. with more than 1 edge between the same
@@ -324,7 +335,6 @@ setMethod("adjacencyMatrix", "DGraph",
 ### where each list element is strictly sorted.
 .connComp_DGraph <- function(x)
 {
-    x <- as(x, "SelfHits")
     x <- union(x, t(x))
     x_from <- from(x)
     x_to <- to(x)

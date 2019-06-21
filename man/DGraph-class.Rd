@@ -20,6 +20,7 @@
 \alias{edgeMatrix}
 \alias{edgeMatrix,DGraph-method}
 
+\alias{coerce,SelfHits,DGraph-method}
 \alias{coerce,graphNEL,DGraph-method}
 \alias{coerce,DGraph,graphNEL-method}
 
