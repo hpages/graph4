@@ -20,15 +20,17 @@
 \alias{edgeMatrix}
 \alias{edgeMatrix,DGraph-method}
 
+\alias{adjacencyMatrix}
+\alias{adjacencyMatrix,DGraph-method}
+
 \alias{coerce,SelfHits,DGraph-method}
+\alias{coerce,ngCMatrix,DGraph-method}
 \alias{coerce,graphNEL,DGraph-method}
 \alias{coerce,DGraph,graphNEL-method}
 
 \alias{summary.DGraph}
 \alias{summary,DGraph-method}
 
-\alias{adjacencyMatrix}
-\alias{adjacencyMatrix,DGraph-method}
 \alias{connComp}
 \alias{connComp,DGraph-method}
 
@@ -183,6 +185,16 @@ nodes(dg1)
 as.data.frame(dg1)
 as(dg1, "DataFrame")
 
+adjm <- adjacencyMatrix(dg1)
+adjm
+
+as(adjm, "DGraph")
+
+## Note that if 'x' is a square ngCMatrix object,
+## 'adjacencyMatrix(as(x, "DGraph"))' is guaranted to be
+## identical to 'x' (modulo the dimnames).
+stopifnot(identical(adjacencyMatrix(as(adjm, "DGraph")), adjm))
+
 ## Coerce to a graphNEL instance from the graph package:
 gnel <- as(dg1, "graphNEL")
 gnel
@@ -209,10 +221,8 @@ plot(agopen(gnel, "dg1", recipEdges="distinct"))
 ## TODO
 
 ## ---------------------------------------------------------------------
-## ADJACENCY MATRIX & CONNECTED COMPONENTS
+## CONNECTED COMPONENTS
 ## ---------------------------------------------------------------------
-
-adjacencyMatrix(dg1)
 
 connComp(dg1)
 }

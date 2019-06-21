@@ -136,6 +136,26 @@ setMethod("edgeMatrix", "DGraph",
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### adjacencyMatrix()
+###
+
+### Generic defined in the graph package.
+### Returns an ngCMatrix object (defined in Matrix package).
+setMethod("adjacencyMatrix", "DGraph",
+    function(object)
+    {
+        object_nodes <- nodes(object)
+        object_nnode <- length(object_nodes)
+        object_nodenames <- names(object_nodes)
+        ans_dim <- c(object_nnode, object_nnode)
+        ans_dimnames <- list(object_nodenames, object_nodenames)
+        sparseMatrix(from(object), to(object), dims=ans_dim,
+                     dimnames=ans_dimnames)
+    }
+)
+
+
+### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Coercion
 ###
 
@@ -147,6 +167,30 @@ setAs("SelfHits", "DGraph",
     {
         nodes <- AnnotatedIDs(seq_len(nnode(from)))
         new2("DGraph", from, nodes=nodes, check=FALSE)
+    }
+)
+
+### We provide a coercion method to go from ngCMatrix (defined in
+### Matrix package) to DGraph. Note that if 'x' is a square ngCMatrix
+### object, 'adjacencyMatrix(as(x, "DGraph"))' is guaranted to be
+### identical to 'x' (modulo the dimnames).
+setAs("ngCMatrix", "DGraph",
+    function(from)
+    {
+        N <- nrow(from)
+        if (ncol(from) != N)
+            stop(wmsg(class(from), " object to coerce to DGraph ",
+                      "must be square"))
+        ans <- DGraph(N, from@i + 1L, rep.int(seq_len(N), diff(from@p)))
+        if (!is.null(rownames(from))) {
+            names(nodes(ans)) <- rownames(from)
+            return(ans)
+        }
+        if (!is.null(colnames(from))) {
+            names(nodes(ans)) <- colnames(from)
+            return(ans)
+        }
+        ans
     }
 )
 
@@ -305,25 +349,6 @@ setMethod("summary", "DGraph", summary.DGraph)
 
 ### TODO: Print a bottom line like for Factor objects e.g. something like:
 ###   Nodes: IRanges object of length 10
-
-
-### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### adjacencyMatrix()
-###
-
-### Generic defined in the graph package.
-setMethod("adjacencyMatrix", "DGraph",
-    function(object)
-    {
-        object_nodes <- nodes(object)
-        object_nnode <- length(object_nodes)
-        object_nodenames <- names(object_nodes)
-        ans_dim <- c(object_nnode, object_nnode)
-        ans_dimnames <- list(object_nodenames, object_nodenames)
-        sparseMatrix(from(object), to(object), dims=ans_dim,
-                     dimnames=ans_dimnames)
-    }
-)
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
