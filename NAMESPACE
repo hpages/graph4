@@ -89,11 +89,15 @@ export(
 
 export(
     ## AnnotatedIDs-class.R:
-    ID
+    ID,
+
+    ## DGraph-class.R:
+    fromNode, toNode
 )
 
 ### Exactly the same list as above.
 exportMethods(
-    ID
+    ID,
+    fromNode, toNode
 )
 

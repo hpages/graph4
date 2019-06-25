@@ -11,6 +11,10 @@
 \alias{nodes,DGraph-method}
 \alias{nodes<-}
 \alias{nodes<-,DGraph,ANY-method}
+\alias{fromNode}
+\alias{fromNode,DGraph-method}
+\alias{toNode}
+\alias{toNode,DGraph-method}
 \alias{isDirected}
 \alias{isDirected,DGraph-method}
 \alias{edgemode}
@@ -30,6 +34,7 @@
 
 \alias{summary.DGraph}
 \alias{summary,DGraph-method}
+\alias{show,DGraph-method}
 
 \alias{connComp}
 \alias{connComp,DGraph-method}
@@ -80,25 +85,66 @@ DGraph(nodes, from=integer(0), to=integer(0), ...)
 }
 
 \section{Accessors}{
-  Because DGraph objects are \link[S4Vectors]{SelfHits} derivatives (i.e.
-  DGraph is a subclass of the \link[S4Vectors]{SelfHits} class defined in
-  the \pkg{S4Vectors} package), they support the same set of getters and
-  setters as \link[S4Vectors]{SelfHits} objects.
 
-  In addition they support the following graph-specific getters:
-  \itemize{
-    \item \code{numNodes(x)}: same as \code{nnode{x}} (provided for
-          compatibility with the \pkg{graph} package)
-    \item \code{nodes(x)}: get the nodes
-    \item \code{isDirected(x)}: whether the object is \emph{directed}
-          or not
-    \item \code{edgemode(x)}: returns \code{"directed"} or
-          \code{"undirected"}
+  \subsection{Getters}{
+    Because DGraph objects are \link[S4Vectors]{Vector} derivatives,
+    they support the \code{length()}, \code{mcols()}, and \code{metadata()}
+    getters.
+    Note that the length of the object is its number of edges and
+    the \code{mcols()} getter returns the \emph{edge attributes}
+    in a \link[S4Vectors]{DataFrame} object with 1 row per edge
+    and 1 column per attribute.
+
+    In addition DGraph objects support the following graph-specific getters:
+    \itemize{
+      \item \code{nodes(x)}: Get the nodes of \code{x}.
+
+      \item \code{nnode(x)} and \code{numNodes(x)}: Both return the number
+            of nodes in \code{x} (i.e. \code{length(nodes(x))}).
+            The \code{numNodes} getter is provided for compatibility with
+            the \pkg{graph} package.
+
+      \item \code{from(x)} and \code{to(x)}: Get the \emph{from index} and
+            \emph{to index} for each edge.
+            More precisely, both getters return an integer vector
+            that is \emph{parallel} to \code{x} i.e. with one element per edge
+            in \code{x}. The values in the 2 vectors are \emph{node indices}.
+            \code{from(x)[i]} and \code{to(x)[i]} are the indices of the
+            \emph{from} and \emph{to} nodes of the i-th edge, respectively.
+            Said otherwise: the i-th edge goes from node
+            \code{nodes(x)[from(x)[i]]} to \code{nodes(x)[to(x)[i]]}.
+
+      \item \code{edgeMatrix(x)}: Returns a 2-row matrix with 1 column per
+            edge. The 1st row of the matrix contains the \emph{from indices}
+            and its 2nd row contains the \emph{to indices}.
+
+      \item \code{fromNode(x)} and \code{toNode(x)}: Get the \emph{from
+            node} and \emph{to node} for each edge.
+            More precisely, both getters return a vector of nodes
+            that is \emph{parallel} to \code{x}. \code{fromNode(x)[i]}
+            and \code{toNode(x)[i]} are the \emph{from} and \emph{to}
+            nodes of the i-th edge, respectively.
+            More formally, \code{fromNode(x)} and \code{toNode(x)} are
+            just doing \code{nodes(x)[from(x)]} and \code{nodes(x)[to(x)]}.
+
+      \item \code{isDirected(x)}: Indicates whether the object is
+            \emph{directed} or not.
+
+      \item \code{edgemode(x)}: Returns \code{"directed"} or
+            \code{"undirected"}.
+    }
   }
-  and setters:
-  \itemize{
-    \item \code{nodes(x) <- value}: replace the current nodes
-    \item \code{edgemode(x) <- value}: set the \emph{edgemode}
+
+  \subsection{Setters}{
+    Because DGraph objects are \link[S4Vectors]{Vector} derivatives,
+    they support the \code{mcols()} and \code{metadata()} setters.
+
+    In addition they support the following setters:
+    \itemize{
+      \item \code{nodes(x) <- value}: Replace the current nodes.
+
+      \item \code{edgemode(x) <- value}: Set the \emph{edgemode}.
+    }
   }
 }
 
@@ -169,8 +215,13 @@ dg1
 length(dg1)  # number of edges
 mcols(dg1)   # metadata columns on the edges (1 row per edge)
 
-nnode(dg1)   # number of nodes (same as 'numNodes(dg1)')
 nodes(dg1)   # the nodes
+nnode(dg1)   # number of nodes (same as 'numNodes(dg1)')
+from(dg1)
+to(dg1)
+edgeMatrix(dg1)
+fromNode(dg1)
+toNode(dg1)
 
 ## Set some names and metadata columns on the nodes:
 names(nodes(dg1)) <- LETTERS[1:8]

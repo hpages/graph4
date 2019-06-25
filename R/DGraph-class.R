@@ -88,6 +88,13 @@ setReplaceMethod("nodes", "DGraph",
     }
 )
 
+setGeneric("fromNode", function(x) standardGeneric("fromNode"))
+setMethod("fromNode", "DGraph", function(x) extractROWS(nodes(x), from(x)))
+
+setGeneric("toNode", function(x) standardGeneric("toNode"))
+setMethod("toNode", "DGraph", function(x) extractROWS(nodes(x), to(x)))
+
+
 ### Generic defined in the graph package.
 setMethod("isDirected", "DGraph",
     function(object) !is(object, "UGraph")
@@ -356,21 +363,70 @@ setAs("DGraph", "graphNEL", .from_DGraph_to_graphNEL)
 
 .DGraph_summary <- function(object)
 {
+    object_nnode <- nnode(object)
     object_len <- length(object)
     object_mcols <- mcols(object, use.names=FALSE)
     object_nmc <- if (is.null(object_mcols)) 0L else ncol(object_mcols)
-    paste0(classNameForDisplay(object), " object with ", object_len, " ",
-           ifelse(object_len == 1L, "edge", "edges"),
-           " and ", object_nmc, " metadata ",
-           ifelse(object_nmc == 1L, "column", "columns"))
+    paste0(classNameForDisplay(object), " object with ",
+           object_nnode, " node", ifelse(object_nnode == 1L, "", "s"), ", ",
+           object_len, " edge", ifelse(object_len == 1L, "", "s"), ", and ",
+           object_nmc, " metadata column", ifelse(object_nmc == 1L, "", "s"))
 }
 ### S3/S4 combo for summary.DGraph
 summary.DGraph <- function(object, ...)
     .DGraph_summary(object, ...)
 setMethod("summary", "DGraph", summary.DGraph)
 
-### TODO: Print a bottom line like for Factor objects e.g. something like:
-###   Nodes: IRanges object of length 10
+.from_DGraph_to_naked_character_matrix_for_display <- function(x)
+{
+    x_len <- length(x)
+    x_mcols <- mcols(x, use.names=FALSE)
+    x_nmc <- if (is.null(x_mcols)) 0L else ncol(x_mcols)
+    ans <- cbind(fromNode=showAsCell(fromNode(x)),
+                 from=as.character(from(x)),
+                 rep.int(ifelse(is(x, "UGraph"), "<->", "->"), length(x)),
+                 to=as.character(to(x)),
+                 toNode=showAsCell(toNode(x)))
+    if (x_nmc > 0L) {
+        tmp <- as.data.frame(lapply(x_mcols, showAsCell), optional=TRUE)
+        ans <- cbind(ans, `|`=rep.int("|", x_len), as.matrix(tmp))
+    }
+    ans
+}
+
+.show_DGraph <- function(x, margin="", print.classinfo=FALSE)
+{
+    cat(margin, summary(x), ":\n", sep="")
+    ## makePrettyMatrixForCompactPrinting() assumes that head() and tail()
+    ## work on 'x'.
+    out <- S4Vectors:::makePrettyMatrixForCompactPrinting(x,
+                .from_DGraph_to_naked_character_matrix_for_display)
+    if (print.classinfo) {
+        .COL2CLASS <- c(
+            fromNode=class(x@nodes),
+            from="integer",
+            "",
+            to="integer",
+            toNode=class(x@nodes)
+        )
+        classinfo <-
+            S4Vectors:::makeClassinfoRowForCompactPrinting(x, .COL2CLASS)
+        ## A sanity check, but this should never happen!
+        stopifnot(identical(colnames(classinfo), colnames(out)))
+        out <- rbind(classinfo, out)
+    }
+    if (nrow(out) != 0L)
+        rownames(out) <- paste0(margin, "  ", rownames(out))
+    ## We set 'max' to 'length(out)' to avoid the getOption("max.print")
+    ## limit that would typically be reached when 'showHeadLines' global
+    ## option is set to Inf.
+    print(out, quote=FALSE, right=TRUE, max=length(out))
+}
+
+setMethod("show", "DGraph",
+    function(object)
+        .show_DGraph(object, print.classinfo=TRUE)
+)
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
