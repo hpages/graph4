@@ -58,21 +58,30 @@ DGraph(nodes, from=integer(0), to=integer(0), ...)
     A \emph{vector-like object} containing the nodes.
     This can be any \link[S4Vectors]{Vector} derivative.
     This can also be an ordinary vector (e.g. a character vector),
-    in which case it will be wrapped in an \link{AnnotatedIDs}
-    object (with \code{AnnotatedIDs(nodes)}).
+    in which case it will get automatically wrapped in an
+    \link{AnnotatedIDs} object (with \code{AnnotatedIDs(nodes)}).
 
-    A special case is when \code{nodes} is a single number: in that case
-    the nodes will be generated with \code{AnnotatedIDs(seq_len(nodes))}.
+    Passing a single number to \code{nodes} is treated as a special
+    case: in that case the nodes get automatically generated with
+    \code{AnnotatedIDs(seq_len(nodes))}.
   }
   \item{from, to}{
-    Two integer vectors of the same length describing the edges.
-    The values in each vector must be valid node indices.
-    The pair formed by \code{from[i]} and \code{to[i]} represents
-    an edge that goes from node \code{nodes[from[i]]} to node
+    Two \emph{parallel} integer vectors describing the edges. By
+    \emph{parallel} we mean that the two vectors must have the same
+    length. The values in each vector must be valid node indices.
+    For each \code{i} between 1 and N (where N is the common length
+    of the \code{from} and \code{to} vectors), the pair formed by
+    \code{from[i]} and \code{to[i]} represents the i-th edge, which
+    is an edge that goes from node \code{nodes[from[i]]} to node
     \code{nodes[to[i]]}.
+
+    Note that there can be an arbitrary number of edges going in
+    both directions between two given nodes.
   }
   \item{...}{
-    Optional metadata columns to attach to the returned DGraph object.
+    Optional \emph{edge attributes}. These must be vector-like objects
+    \emph{parallel} to the \code{from} and \code{to} vectors. They will
+    be stored as the metadata columns of the DGraph object.
   }
 }
 
