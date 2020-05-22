@@ -1,4 +1,4 @@
-Package: graph2
+Package: anagraph
 Title: Efficient graph representation and manipulation in Bioconductor
 Description: Implements classes for representing and manipulating directed
 	and undirected graphs (DGraph and UGraph classes). Both the edges
