@@ -58,7 +58,7 @@ exportMethods(
     match,
 
     ## Methods for generics defined in the S4Vectors package:
-    parallelSlotNames, pcompare, selfmatch,
+    vertical_slot_names, pcompare, selfmatch,
 
     ## Methods for generics defined in the graph package:
     numNodes, nodes, "nodes<-",

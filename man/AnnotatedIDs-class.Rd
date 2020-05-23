@@ -5,7 +5,7 @@
 \alias{AnnotatedIDs-class}
 \alias{AnnotatedIDs}
 
-\alias{parallelSlotNames,AnnotatedIDs-method}
+\alias{vertical_slot_names,AnnotatedIDs-method}
 
 \alias{ID}
 \alias{ID,AnnotatedIDs-method}
