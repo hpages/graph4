@@ -86,18 +86,12 @@ setMethod("as.vector", "AnnotatedIDs",
 
 .from_AnnotatedIDs_to_naked_character_matrix_for_display <- function(x)
 {
-    x_len <- length(x)
-    x_mcols <- mcols(x, use.names=FALSE)
-    x_nmc <- if (is.null(x_mcols)) 0L else ncol(x_mcols)
-    ## Use showAsCell(() rather than as.character() (the latter won't do
-    ## the right thing if 'x@ID' is a data-frame-like object).
-    ans <- cbind(ID=showAsCell(x@ID))
-    if (x_nmc > 0L) {
-        tmp <- as.data.frame(lapply(x_mcols, showAsCell), optional=TRUE)
-        ans <- cbind(ans, `|`=rep.int("|", x_len), as.matrix(tmp))
-    }
-    ans
+    m <- cbind(ID=showAsCell(x@ID))
+    cbind_mcols_for_display(m, x)
 }
+setMethod("makeNakedCharacterMatrixForDisplay", "AnnotatedIDs",
+    .from_AnnotatedIDs_to_naked_character_matrix_for_display
+)
 
 .show_AnnotatedIDs <- function(x, margin="", print.classinfo=FALSE)
 {
@@ -107,16 +101,14 @@ setMethod("as.vector", "AnnotatedIDs",
     cat(classNameForDisplay(x), " object of length ", x_len, " with ",
         x_nmc, " metadata ", ifelse(x_nmc == 1L, "column", "columns"),
         ":\n", sep="")
-    ## S4Vectors:::makePrettyMatrixForCompactPrinting() assumes that head()
-    ## and tail() work on 'x'.
-    out <- S4Vectors:::makePrettyMatrixForCompactPrinting(x,
-                .from_AnnotatedIDs_to_naked_character_matrix_for_display)
+    ## makePrettyMatrixForCompactPrinting() assumes that head() and tail()
+    ## work on 'x'.
+    out <- makePrettyMatrixForCompactPrinting(x)
     if (print.classinfo) {
         .COL2CLASS <- c(
             ID=classNameForDisplay(x@ID)
         )
-        classinfo <-
-            S4Vectors:::makeClassinfoRowForCompactPrinting(x, .COL2CLASS)
+        classinfo <- makeClassinfoRowForCompactPrinting(x, .COL2CLASS)
         ## A sanity check, but this should never happen!
         stopifnot(identical(colnames(classinfo), colnames(out)))
         out <- rbind(classinfo, out)
@@ -134,11 +126,19 @@ setMethod("show", "AnnotatedIDs",
         .show_AnnotatedIDs(object, print.classinfo=TRUE)
 )
 
+setMethod("showAsCell", "AnnotatedIDs", function(object) showAsCell(object@ID))
+
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Comparing and ordering
 ###
 
+setMethod("pcompare", c("AnnotatedIDs", "ANY"),
+    function(x, y) pcompare(x@ID, y)
+)
+setMethod("pcompare", c("ANY", "AnnotatedIDs"),
+    function(x, y) pcompare(x, y@ID)
+)
 setMethod("pcompare", c("AnnotatedIDs", "AnnotatedIDs"),
     function(x, y) pcompare(x@ID, y@ID)
 )

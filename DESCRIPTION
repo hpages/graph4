@@ -4,7 +4,7 @@ Description: Implements classes for representing and manipulating directed
 	and undirected graphs (DGraph and UGraph classes). Both the edges
 	and nodes of a DGraph or UGraph object can be annotated via the use
 	of "metadata columns".
-Version: 0.1.2
+Version: 0.1.3
 Encoding: UTF-8
 Author: Hervé Pagès <hpages@fredhutch.org>
 Maintainer: Hervé Pagès <hpages@fredhutch.org>
@@ -12,8 +12,9 @@ biocViews: Infrastructure, DataRepresentation, GraphAndNetwork, Annotation,
 	GenomeAnnotation
 Depends: methods, Matrix, BiocGenerics, S4Vectors (>= 0.25.14), graph
 Imports: stats, IRanges
-Suggests: Rgraphviz
+Suggests: Rgraphviz, AnnotationDbi, GO.db
 License: Artistic-2.0
 Collate: AnnotatedIDs-class.R
 	DGraph-class.R
 	UGraph-class.R
+	makeDGraphFromGO.R

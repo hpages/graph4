@@ -15,8 +15,12 @@
 \alias{as.vector,AnnotatedIDs-method}
 
 \alias{show,AnnotatedIDs-method}
+\alias{showAsCell,AnnotatedIDs-method}
 
+\alias{pcompare,AnnotatedIDs,ANY-method}
+\alias{pcompare,ANY,AnnotatedIDs-method}
 \alias{pcompare,AnnotatedIDs,AnnotatedIDs-method}
+
 \alias{match,AnnotatedIDs,AnnotatedIDs-method}
 \alias{selfmatch,AnnotatedIDs-method}
 \alias{xtfrm,AnnotatedIDs-method}

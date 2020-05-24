@@ -379,28 +379,23 @@ setMethod("summary", "DGraph", summary.DGraph)
 
 .from_DGraph_to_naked_character_matrix_for_display <- function(x)
 {
-    x_len <- length(x)
-    x_mcols <- mcols(x, use.names=FALSE)
-    x_nmc <- if (is.null(x_mcols)) 0L else ncol(x_mcols)
-    ans <- cbind(fromNode=showAsCell(fromNode(x)),
-                 from=as.character(from(x)),
-                 rep.int(ifelse(is(x, "UGraph"), "<->", "->"), length(x)),
-                 to=as.character(to(x)),
-                 toNode=showAsCell(toNode(x)))
-    if (x_nmc > 0L) {
-        tmp <- as.data.frame(lapply(x_mcols, showAsCell), optional=TRUE)
-        ans <- cbind(ans, `|`=rep.int("|", x_len), as.matrix(tmp))
-    }
-    ans
+    m <- cbind(fromNode=showAsCell(fromNode(x)),
+               from=showAsCell(from(x)),
+               rep.int(ifelse(is(x, "UGraph"), "<->", "->"), length(x)),
+               to=showAsCell(to(x)),
+               toNode=showAsCell(toNode(x)))
+    cbind_mcols_for_display(m, x)
 }
+setMethod("makeNakedCharacterMatrixForDisplay", "DGraph",
+    .from_DGraph_to_naked_character_matrix_for_display
+)
 
 .show_DGraph <- function(x, margin="", print.classinfo=FALSE)
 {
     cat(margin, summary(x), ":\n", sep="")
     ## makePrettyMatrixForCompactPrinting() assumes that head() and tail()
     ## work on 'x'.
-    out <- S4Vectors:::makePrettyMatrixForCompactPrinting(x,
-                .from_DGraph_to_naked_character_matrix_for_display)
+    out <- makePrettyMatrixForCompactPrinting(x)
     if (print.classinfo) {
         .COL2CLASS <- c(
             fromNode=class(x@nodes),
@@ -409,8 +404,7 @@ setMethod("summary", "DGraph", summary.DGraph)
             to="integer",
             toNode=class(x@nodes)
         )
-        classinfo <-
-            S4Vectors:::makeClassinfoRowForCompactPrinting(x, .COL2CLASS)
+        classinfo <- makeClassinfoRowForCompactPrinting(x, .COL2CLASS)
         ## A sanity check, but this should never happen!
         stopifnot(identical(colnames(classinfo), colnames(out)))
         out <- rbind(classinfo, out)
@@ -456,5 +450,9 @@ setMethod("show", "DGraph",
 ### Generic defined in the graph package.
 setMethod("connComp", "DGraph",
     function(object) .connComp_DGraph(object)
+)
+
+setMethod("isConnected", "DGraph",
+    function(object) { length(connComp(object)) == 1L }
 )
 

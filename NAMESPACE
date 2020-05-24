@@ -58,12 +58,12 @@ exportMethods(
     match,
 
     ## Methods for generics defined in the S4Vectors package:
-    vertical_slot_names, pcompare, selfmatch,
+    vertical_slot_names, showAsCell, pcompare, selfmatch,
 
     ## Methods for generics defined in the graph package:
     numNodes, nodes, "nodes<-",
     isDirected, edgemode, "edgemode<-", edgeMatrix,
-    adjacencyMatrix, connComp
+    adjacencyMatrix, connComp, isConnected
 )
 
 
@@ -79,7 +79,10 @@ export(
     DGraph,
 
     ## UGraph-class.R:
-    UGraph
+    UGraph,
+
+    ## makeDGraphFromGO.R:
+    makeDGraphFromGO
 )
 
 

@@ -38,6 +38,8 @@
 
 \alias{connComp}
 \alias{connComp,DGraph-method}
+\alias{isConnected}
+\alias{isConnected,DGraph-method}
 
 \title{DGraph objects}
 
