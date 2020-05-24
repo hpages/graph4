@@ -74,5 +74,20 @@ isConnected(gograph)
 ## is no longer connected (it has 3 connected components):
 gograph2 <- gograph[toNode(gograph) != "all"]
 connComp(gograph2)
+
+## Comparison with a graphNEL-based solution:
+\donttest{
+  gognel <- as(gograph, "graphNEL")  # takes about 2 min.
+  gognel
+
+  head(nodes(gognel))
+  head(nodes(gograph))  # nodes are annotated
+
+  object.size(gognel)   # 185.5 MB
+  object.size(gograph)  # 18.5 MB
+
+  isConnected(gognel)   # takes about 1 h
+  isConnected(gograph)  # takes < 0.2 sec
+}
 }
 \keyword{manip}
