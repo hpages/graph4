@@ -7,6 +7,8 @@
 
 \alias{numNodes}
 \alias{numNodes,DGraph-method}
+\alias{numEdges}
+\alias{numEdges,DGraph-method}
 \alias{nodes}
 \alias{nodes,DGraph-method}
 \alias{nodes<-}
@@ -15,10 +17,16 @@
 \alias{fromNode,DGraph-method}
 \alias{toNode}
 \alias{toNode,DGraph-method}
+\alias{outDegree}
+\alias{outDegree,DGraph-method}
+\alias{inDegree}
+\alias{inDegree,DGraph-method}
+\alias{degree}
+\alias{degree,ANY-method}
 \alias{isDirected}
 \alias{isDirected,DGraph-method}
 \alias{edgemode}
-\alias{edgemode,DGraph-method}
+\alias{edgemode,ANY-method}
 \alias{edgemode<-}
 \alias{edgemode<-,DGraph,ANY-method}
 \alias{edgeMatrix}
@@ -29,17 +37,18 @@
 
 \alias{coerce,SelfHits,DGraph-method}
 \alias{coerce,ngCMatrix,DGraph-method}
-\alias{coerce,graphNEL,DGraph-method}
-\alias{coerce,DGraph,graphNEL-method}
 
 \alias{summary.DGraph}
 \alias{summary,DGraph-method}
 \alias{show,DGraph-method}
 
 \alias{connComp}
-\alias{connComp,DGraph-method}
+\alias{connComp,SelfHits-method}
 \alias{isConnected}
-\alias{isConnected,DGraph-method}
+\alias{isConnected,ANY-method}
+
+\alias{coerce,graphNEL,DGraph-method}
+\alias{coerce,DGraph,graphNEL-method}
 
 \title{DGraph objects}
 
@@ -192,6 +201,12 @@ DGraph(nodes, from=integer(0), to=integer(0), ...)
   \code{order(from(x), to(x))}.
 }
 
+\section{Compatibility with graphNEL objects}{
+  \link[graph]{graphNEL} objects are defined in the \pkg{graph} package.
+  The \pkg{graph4} package provides coercion methods for coercing a
+  DGraph object to \link[graph]{graphNEL} and vice-versa.
+}
+
 \author{Hervé Pagès}
 
 \seealso{
@@ -218,18 +233,28 @@ showClass("DGraph")  # DGraph extends SelfHits
 dg0 <- DGraph(nodes=letters[1:10])
 dg0
 
+length(dg0)     # number of edges
+nodes(dg0)
+nnode(dg0)
+outDegree(dg0)
+inDegree(dg0)
+
 ## A directed graph with 8 nodes and 9 edges:
 dg1 <- DGraph(nodes=8, c(1, 1:5, 6, 6, 6), c(6, 8:4, 1:2, 7),
                        weights=0.11*(1:9))
 dg1
 
-length(dg1)  # number of edges
-mcols(dg1)   # metadata columns on the edges (1 row per edge)
+length(dg1)     # number of edges
+mcols(dg1)      # metadata columns on the edges (1 row per edge)
 
-nodes(dg1)   # the nodes
-nnode(dg1)   # number of nodes (same as 'numNodes(dg1)')
+nodes(dg1)      # the nodes
+nnode(dg1)      # number of nodes (same as 'numNodes(dg1)')
 from(dg1)
 to(dg1)
+outDegree(dg1)  # nb of edges starting from each node
+inDegree(dg1)   # nb of edges ending on each node
+degree(dg1)     # outDegree(dg1) + inDegree(dg1)
+
 edgeMatrix(dg1)
 fromNode(dg1)
 toNode(dg1)
@@ -238,6 +263,7 @@ toNode(dg1)
 names(nodes(dg1)) <- LETTERS[1:8]
 mcols(nodes(dg1))$score <- runif(8)
 nodes(dg1)
+degree(dg1)
 
 ## ---------------------------------------------------------------------
 ## COERCION
@@ -257,19 +283,6 @@ as(adjm, "DGraph")
 ## identical to 'x' (modulo the dimnames).
 stopifnot(identical(adjacencyMatrix(as(adjm, "DGraph")), adjm))
 
-## Coerce to a graphNEL instance from the graph package:
-gnel <- as(dg1, "graphNEL")
-gnel
-
-## The graphNEL instance can be used to plot the graph with the
-## Rgraphviz package:
-library(Rgraphviz)
-plot(agopen(gnel, "dg1"))
-plot(agopen(gnel, "dg1", recipEdges="distinct"))
-
-## TODO: More coercions to come soon (to DGraph<->graphAM,
-## DGraph<->graphBAM, DGraph<->igraph, etc...)
-
 ## ---------------------------------------------------------------------
 ## CONCATENATION
 ## ---------------------------------------------------------------------
@@ -287,6 +300,23 @@ plot(agopen(gnel, "dg1", recipEdges="distinct"))
 ## ---------------------------------------------------------------------
 
 connComp(dg1)
+
+## ---------------------------------------------------------------------
+## COMPATIBILITY WITH graphNEL OBJECTS
+## ---------------------------------------------------------------------
+
+## Coerce to a graphNEL instance from the graph package:
+gnel1 <- as(dg1, "graphNEL")
+gnel1
+
+## The graphNEL instance can be used to plot the graph with the
+## Rgraphviz package:
+library(Rgraphviz)
+plot(agopen(gnel1, "dg1"))
+plot(agopen(gnel1, "dg1", recipEdges="distinct"))
+
+## TODO: More coercions to come soon (to DGraph<->graphAM,
+## DGraph<->graphBAM, DGraph<->igraph, etc...)
 }
 \keyword{methods}
 \keyword{classes}

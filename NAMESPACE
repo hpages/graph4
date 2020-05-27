@@ -4,9 +4,10 @@ importFrom(Matrix, sparseMatrix)
 import(BiocGenerics)
 import(S4Vectors)
 import(IRanges)
-import(graph)  # for generic functions nodes(), numNodes(), adjacencyMatrix(),
-               # etc... (but ideally these should be defined in BiocGenerics
-               # or maybe in a GraphGenerics package)
+import(graph)  # for generic functions numNodes(), numEdges(), nodes(),
+               # degree(), adjacencyMatrix(), etc... (but ideally these
+               # should be defined in BiocGenerics or maybe in a GraphGenerics
+               # package)
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -18,7 +19,7 @@ exportClasses(
     AnnotatedIDs,
 
     ## DGraph-class.R:
-    DGraph,
+    DGraph, DGraphNodes,
 
     ## UGraph-class.R:
     UGraph
@@ -55,13 +56,14 @@ exportMethods(
     show, coerce,
 
     ## Methods for generics defined in the BiocGenerics package:
-    match,
+    match, t,
 
     ## Methods for generics defined in the S4Vectors package:
     vertical_slot_names, showAsCell, pcompare, selfmatch,
+    from, to, nLnode, nRnode, nnode, countLnodeHits, countRnodeHits,
 
     ## Methods for generics defined in the graph package:
-    numNodes, nodes, "nodes<-",
+    numNodes, numEdges, nodes, "nodes<-", degree,
     isDirected, edgemode, "edgemode<-", edgeMatrix,
     adjacencyMatrix, connComp, isConnected
 )
@@ -76,7 +78,7 @@ export(
     AnnotatedIDs,
 
     ## DGraph-class.R:
-    DGraph,
+    DGraph, DGraphNodes,
 
     ## UGraph-class.R:
     UGraph,
@@ -95,12 +97,14 @@ export(
     ID,
 
     ## DGraph-class.R:
-    fromNode, toNode
+    fromNode, toNode,
+    outDegree, inDegree
 )
 
 ### Exactly the same list as above.
 exportMethods(
     ID,
-    fromNode, toNode
+    fromNode, toNode,
+    outDegree, inDegree
 )
 

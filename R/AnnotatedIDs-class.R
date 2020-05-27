@@ -8,13 +8,14 @@
 setClass("AnnotatedIDs",
     contains="Vector",
     representation(
-        ID="vector"  # We could use "vector_OR_Vector" to support wrapping
-                     # any Vector derivative at no extra cost. Note that
-                     # wrapping data-frame-like objects (e.g. data.frame
-                     # or DataFrame) turns it into an AnnotatedIDs object
-                     # of length the number of **rows**! As a consequence,
-                     # the metadata columns of the AnnotatedIDs object are
-                     # annotating the **rows** of the data-frame-like object.
+        ## Using "vector_OR_Vector" instead of just "vector" allows us to
+        ## wrap any Vector derivative at no extra cost.
+        ## Note that wrapping data-frame-like objects (e.g. data.frame or
+        ## DataFrame) turns it into an AnnotatedIDs object of length its
+        ## number of **rows**! As a consequence, the metadata columns of
+        ## the AnnotatedIDs object are annotating the **rows** of the
+        ## data-frame-like object.
+        ID="vector_OR_Vector"
     ),
     prototype(
         ID=integer(0)
@@ -39,9 +40,19 @@ setMethod("vertical_slot_names", "AnnotatedIDs",
 ### Constructor
 ###
 
+### FIXME: Currently broken if 'IDs' is a DataFrame object!
 AnnotatedIDs <- function(IDs=integer(0), ...)
 {
     mcols <- DataFrame(..., check.names=FALSE)
+    if (is(IDs, "AnnotatedIDs")) {
+        if (length(mcols) != 0L) {
+            IDs_mcols <- mcols(IDs)
+            if (length(IDs_mcols) != 0L)
+                mcols <- cbind(IDs_mcols, mcols)
+            mcols(IDs) <- mcols
+        }
+        return(IDs)
+    }
     ans <- new2("AnnotatedIDs", ID=IDs, check=FALSE)
     if (length(mcols) != 0L)
         mcols(ans) <- mcols

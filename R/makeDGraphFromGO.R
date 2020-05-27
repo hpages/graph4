@@ -2,7 +2,6 @@
 ### makeDGraphFromGO()
 ### -------------------------------------------------------------------------
 
-
 .dbselect <- function(dbconn, columns, from)
 {
     SQL <- sprintf("SELECT %s FROM %s", paste0(columns, collapse=","), from)
@@ -55,6 +54,9 @@
     godb
 }
 
+### makeDGraphFromGO() requires packages DBI and AnnotationDbi (both are
+### suggested by graph4). In addition, if 'godb' is not specified, it also
+### requires the GO.db package (also suggested by graph4).
 ### When specified, 'godb' must be a GOdb object (the GOdb class is defined
 ### in the AnnotationDbi package).
 makeDGraphFromGO <- function(godb)

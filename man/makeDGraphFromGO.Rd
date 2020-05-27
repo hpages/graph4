@@ -54,6 +54,10 @@ mcols(nodes(gograph))
 ## Number of terms in each sub-ontology:
 table(mcols(nodes(gograph))$ontology)
 
+## Number of parents of each node:
+out_deg <- outDegree(gograph)
+table(out_deg)  # 1 node has no parents
+
 ## The GO.db package introduces an artifical term called "all"
 ## that is the common parent of the three sub-ontologies:
 nodes(gograph)[nodes(gograph) == "all"]
@@ -76,18 +80,24 @@ gograph2 <- gograph[toNode(gograph) != "all"]
 connComp(gograph2)
 
 ## Comparison with a graphNEL-based solution:
+gognel <- as(gograph, "graphNEL")  # takes about 80 sec.
+gognel
+
+head(nodes(gognel))
+head(nodes(gograph))           # nodes are annotated
+
+object.size(gognel)            # 185.5 MB
+object.size(gograph)           # 18.5 MB
+
+deg0 <- degree(gognel)         # takes about 0.2 sec.
+out_deg <- outDegree(gograph)  # takes about 0.01 sec.
+in_deg <- inDegree(gograph)    # takes about 0.01 sec.
+stopifnot(all.equal(deg0$outDegree, out_deg))
+stopifnot(all.equal(deg0$inDegree, in_deg))
+
 \donttest{
-  gognel <- as(gograph, "graphNEL")  # takes about 2 min.
-  gognel
-
-  head(nodes(gognel))
-  head(nodes(gograph))  # nodes are annotated
-
-  object.size(gognel)   # 185.5 MB
-  object.size(gograph)  # 18.5 MB
-
-  isConnected(gognel)   # takes about 1 h
-  isConnected(gograph)  # takes < 0.2 sec
+  isConnected(gognel)          # takes about 1 h
+  isConnected(gograph)         # takes < 0.2 sec
 }
 }
 \keyword{manip}

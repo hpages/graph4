@@ -3,6 +3,10 @@
 ### -------------------------------------------------------------------------
 
 
+### A bundle of nodes and edges. Viewed as a vector of edges i.e. the length
+### of the object is its number of edges and subsetting the object means
+### selecting a particular subset of edges (without touching the set of
+### nodes).
 setClass("DGraph",
     contains="SelfHits",
     representation(
@@ -23,7 +27,9 @@ setClass("DGraph",
     ## 'nodes' slot
     if (!is(x@nodes, "Vector"))
         return("'nodes' slot must be a Vector derivative")
-    if (length(x@nodes) != nnode(x))
+    if (is(x@nodes, "DGraphNodes"))
+        return("'nodes' slot cannot be a DGraphNodes object")
+    if (NROW(x@nodes) != nnode(x))
         return("'nodes' slot must have one ROW per node")
 
     TRUE
@@ -36,9 +42,16 @@ setValidity2("DGraph", .validate_DGraph)
 ### Constructor
 ###
 
-### Returns a Vector derivative (wrap ordinary vectors in an AnnotatedIDs
+### Low-level constructor.
+new_DGraph <- function(nodes, edges)
+{
+    ## 'nodes' and 'edges' are trusted.
+    new2("DGraph", edges, nodes=nodes, check=FALSE)
+}
+
+### Return a Vector derivative (wrap ordinary vectors in an AnnotatedIDs
 ### object).
-.normarg_nodes <- function(nodes)
+normarg_nodes <- function(nodes)
 {
     if (is(nodes, "Vector"))
         return(nodes)
@@ -50,11 +63,24 @@ setValidity2("DGraph", .validate_DGraph)
     AnnotatedIDs(nodes)
 }
 
+### High-level constructor.
+### Accept a DGraphNodes object and turn it into a DGraph object.
+### Using DGraph() and DGraphNodes() is the standard way to switch back and
+### forth between DGraph and DGraphNodes. The transformation is very fast and
+### lossless.
 DGraph <- function(nodes, from=integer(0), to=integer(0), ...)
 {
-    nodes <- .normarg_nodes(nodes)
-    sh <- SelfHits(from, to, nnode=length(nodes), ...)
-    new2("DGraph", sh, nodes=nodes, check=FALSE)
+    if (is(nodes, "DGraphNodes")) {
+        if (!(identical(from, integer(0)) &&
+              identical(to, integer(0)) &&
+              length(list(...)) == 0L))
+            stop(wmsg("additional arguments are not allowed ",
+                      "when 'nodes' is a DGraphNodes object"))
+        return(from_DGraphNodes_to_DGraph(nodes))
+    }
+    nodes <- normarg_nodes(nodes)
+    edges <- SelfHits(from, to, nnode=NROW(nodes), ...)
+    new_DGraph(nodes, edges)
 }
 
 
@@ -63,8 +89,10 @@ DGraph <- function(nodes, from=integer(0), to=integer(0), ...)
 ###
 
 ### Generic defined in the graph package.
-### Equivalent to 'nnode(x)'.
-setMethod("numNodes", "DGraph", function(object) length(object@nodes))
+setMethod("numNodes", "DGraph", function(object) nnode(object))
+
+### Generic defined in the graph package.
+setMethod("numEdges", "DGraph", function(object) length(object))
 
 ### Generic defined in the graph package.
 setMethod("nodes", "DGraph", function(object) object@nodes)
@@ -77,8 +105,8 @@ setReplaceMethod("nodes", "DGraph",
         if (is.null(value)) {
             value <- AnnotatedIDs(seq_len(object_nnode))
         } else {
-            value <- .normarg_nodes(value)
-            if (length(value) != object_nnode)
+            value <- normarg_nodes(value)
+            if (NROW(value) != object_nnode)
                 stop(wmsg("this ", class(object), " object ",
                           "expects ", object_nnode, " node",
                           if (object_nnode == 1L) "", "s"))
@@ -94,6 +122,43 @@ setMethod("fromNode", "DGraph", function(x) extractROWS(nodes(x), from(x)))
 setGeneric("toNode", function(x) standardGeneric("toNode"))
 setMethod("toNode", "DGraph", function(x) extractROWS(nodes(x), to(x)))
 
+.make_node_labels <- function(nodes)
+{
+    labels <- ROWNAMES(nodes)
+    if (!is.null(labels))
+        return(labels)
+    ## Unlike as.character(), showAsCell() is guaranted to produce a
+    ## character vector **parallel** to its argument (i.e. with one
+    ## string per ROW). For example as.character() won't do the right
+    ## thing on a DataFrame or DNAString object.
+    showAsCell(nodes)
+}
+
+setGeneric("outDegree", function(object) standardGeneric("outDegree"))
+
+setMethod("outDegree", "DGraph",
+    function(object)
+    {
+        ans <- countLnodeHits(object)
+        names(ans) <- .make_node_labels(nodes(object))
+        ans
+    }
+)
+
+setGeneric("inDegree", function(object) standardGeneric("inDegree"))
+setMethod("inDegree", "DGraph",
+    function(object)
+    {
+        ans <- countRnodeHits(object)
+        names(ans) <- .make_node_labels(nodes(object))
+        ans
+    }
+)
+
+### Generic defined in the graph package.
+setMethod("degree", "ANY",
+    function(object) outDegree(object) + inDegree(object)
+)
 
 ### Generic defined in the graph package.
 setMethod("isDirected", "DGraph",
@@ -101,7 +166,7 @@ setMethod("isDirected", "DGraph",
 )
 
 ### Generic defined in the graph package.
-setMethod("edgemode", "DGraph",
+setMethod("edgemode", "ANY",
     function(object) if (isDirected(object)) "directed" else "undirected"
 )
 
@@ -118,15 +183,17 @@ setReplaceMethod("edgemode", c("DGraph", "ANY"),
     }
 )
 
-.drop_duplicated_edges_from_undirected_graph <- function(x)
+.normalize_undirected_edges <- function(x)
 {
-    flip_idx <- which(from(x) > to(x))
+    x_from <- from(x)
+    x_to <- to(x)
+    flip_idx <- which(x_from > x_to)
     if (length(flip_idx) != 0L) {
-        tmp <- x@from[flip_idx]
-        x@from[flip_idx] <- x@to[flip_idx]
-        x@to[flip_idx] <- tmp
+        tmp <- x_from[flip_idx]
+        x_from[flip_idx] <- x_to[flip_idx]
+        x_to[flip_idx] <- tmp
     }
-    unique(x)
+    SelfHits(x_from, x_to, nnode=nnode(x))
 }
 
 ### Generic defined in the graph package.
@@ -135,8 +202,10 @@ setMethod("edgeMatrix", "DGraph",
     {
         if (!isTRUEorFALSE(duplicates))
             stop(wmsg("'duplicates' must be TRUE or FALSE"))
-        if (!(duplicates || isDirected(object)))
-            object <- .drop_duplicated_edges_from_undirected_graph(object)
+        if (!(duplicates || isDirected(object))) {
+            object <- .normalize_undirected_edges(object)
+            object <- unique(object)
+        }
         rbind(from=from(object), to=to(object))
     }
 )
@@ -152,7 +221,7 @@ setMethod("adjacencyMatrix", "DGraph",
     function(object)
     {
         object_nodes <- nodes(object)
-        object_nnode <- length(object_nodes)
+        object_nnode <- NROW(object_nodes)
         object_nodenames <- names(object_nodes)
         ans_dim <- c(object_nnode, object_nnode)
         ans_dimnames <- list(object_nodenames, object_nodenames)
@@ -166,14 +235,12 @@ setMethod("adjacencyMatrix", "DGraph",
 ### Coercion
 ###
 
-### Note that the 'from' argument below is the standard argument for
-### coercion methods. It should not be confused with the 'from()' accessor
-### for DGraph objects!
 setAs("SelfHits", "DGraph",
     function(from)
     {
         nodes <- AnnotatedIDs(seq_len(nnode(from)))
-        new2("DGraph", from, nodes=nodes, check=FALSE)
+        edges <- as(from, "SelfHits")
+        new_DGraph(nodes, edges)
     }
 )
 
@@ -187,7 +254,7 @@ setAs("ngCMatrix", "DGraph",
         N <- nrow(from)
         if (ncol(from) != N)
             stop(wmsg(class(from), " object to coerce to DGraph ",
-                      "must be square"))
+                      "or DGraphNodes must be square"))
         ans <- DGraph(N, from@i + 1L, rep.int(seq_len(N), diff(from@p)))
         if (!is.null(rownames(from))) {
             names(nodes(ans)) <- rownames(from)
@@ -200,6 +267,115 @@ setAs("ngCMatrix", "DGraph",
         ans
     }
 )
+
+
+### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Show
+###
+
+.DGraph_summary <- function(object)
+{
+    object_nnode <- nnode(object)
+    object_nedge <- numEdges(object)
+    object_mcols <- mcols(object, use.names=FALSE)
+    object_nmc <- if (is.null(object_mcols)) 0L else ncol(object_mcols)
+    paste0(classNameForDisplay(object), " object with ",
+           object_nnode, " node", ifelse(object_nnode == 1L, "", "s"), ", ",
+           object_nedge, " edge", ifelse(object_nedge == 1L, "", "s"), ", and ",
+           object_nmc, " metadata column", ifelse(object_nmc == 1L, "", "s"),
+           " on the edges")
+}
+### S3/S4 combo for summary.DGraph
+summary.DGraph <- function(object, ...)
+    .DGraph_summary(object, ...)
+setMethod("summary", "DGraph", summary.DGraph)
+
+.from_DGraph_to_naked_character_matrix_for_display <- function(x)
+{
+    m <- cbind(fromNode=showAsCell(fromNode(x)),
+               from=showAsCell(from(x)),
+               rep.int(ifelse(is(x, "UGraph"), "<->", "->"), length(x)),
+               to=showAsCell(to(x)),
+               toNode=showAsCell(toNode(x)))
+    cbind_mcols_for_display(m, x)
+}
+setMethod("makeNakedCharacterMatrixForDisplay", "DGraph",
+    .from_DGraph_to_naked_character_matrix_for_display
+)
+
+.show_DGraph <- function(x, margin="", print.classinfo=FALSE)
+{
+    cat(margin, summary(x), ":\n", sep="")
+    ## makePrettyMatrixForCompactPrinting() assumes that head() and tail()
+    ## work on 'x'.
+    out <- makePrettyMatrixForCompactPrinting(x)
+    if (print.classinfo) {
+        COL2CLASS <- c(
+            fromNode=class(x@nodes),
+            from="integer",
+            "",
+            to="integer",
+            toNode=class(x@nodes)
+        )
+        classinfo <- makeClassinfoRowForCompactPrinting(x, COL2CLASS)
+        ## A sanity check, but this should never happen!
+        stopifnot(identical(colnames(classinfo), colnames(out)))
+        out <- rbind(classinfo, out)
+    }
+    if (nrow(out) != 0L)
+        rownames(out) <- paste0(margin, "  ", rownames(out))
+    ## We set 'max' to 'length(out)' to avoid the getOption("max.print")
+    ## limit that would typically be reached when 'showHeadLines' global
+    ## option is set to Inf.
+    print(out, quote=FALSE, right=TRUE, max=length(out))
+}
+
+setMethod("show", "DGraph",
+    function(object)
+        .show_DGraph(object, print.classinfo=TRUE)
+)
+
+
+### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### connComp()
+###
+### connComp() is an S4 generic defined in the graph package.
+###
+
+### Always treats 'x' as an **undirected** graph.
+### Returns the connected components in an IntegerList object
+### where each list element is strictly sorted.
+.connComp_SelfHits <- function(x)
+{
+    x <- union(x, t(x))
+    x_from <- from(x)
+    x_to <- to(x)
+    N <- nnode(x)
+    cid <- cid0 <- seq_len(N)  # cluster ids
+    repeat {
+        cid2 <- pmin(cid, selectHits(x, "first"))
+        if (identical(cid2, cid))
+            break
+        cid <- cid2
+        x <- Hits(x_from, cid[x_to], N, N)
+    }
+    unname(splitAsList(cid0, cid))
+}
+
+### For more generality, we define the method for SelfHits objects instead
+### of DGraph objects.
+setMethod("connComp", "SelfHits",
+    function(object) .connComp_SelfHits(object)
+)
+
+setMethod("isConnected", "ANY",
+    function(object) { length(connComp(object)) == 1L }
+)
+
+
+### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Compatibility with graphNEL objects
+###
 
 ### Uses 'edgeDataDefaults()' and 'edgeData()'.
 ### NOTE: 'edgeData()' is quite slow AND is broken on graphNEL objects
@@ -244,7 +420,7 @@ setAs("ngCMatrix", "DGraph",
 {
     if (!isDirected(from))
         stop(wmsg("Coercing an **undirected** ", class(from), " object ",
-                  "to DGraph is not supported yet. ",
+                  "to DGraph or DGraphNodes is not supported yet. ",
                   "Please set the edgemode of the object to \"directed\" ",
                   "(with 'edgemode(x) <- \"directed\"') before trying ",
                   "to coerce again."))
@@ -267,14 +443,7 @@ setAs("graphNEL", "DGraph", .from_graphNEL_to_DGraph)
 .make_graphNEL_nodes <- function(from)
 {
     from_nodes <- nodes(from)
-    ans_nodes <- names(from_nodes)
-    if (is.null(ans_nodes)) {
-        ## Unlike as.character(), showAsCell() is guaranted to produce a
-        ## character vector **parallel** to its argument (i.e. with one
-        ## string per ROW). For example as.character() won't do the right
-        ## thing on a DNAString object.
-        ans_nodes <- showAsCell(from_nodes)
-    }
+    ans_nodes <- .make_node_labels(from_nodes)
     ## The graphNEL() constructor function will fail (with error "Node names
     ## may not be duplicated") if the character vector supplied to its 'nodes'
     ## argument contains duplicates. By checking this upfront, we can provide
@@ -315,14 +484,14 @@ setAs("graphNEL", "DGraph", .from_graphNEL_to_DGraph)
 {
     ans_nodes <- .make_graphNEL_nodes(from)
 
-    sh <- as(from, "SortedByQuerySelfHits")
-    ans_edgeL <- as.list(setNames(as(sh, "IntegerList"), ans_nodes))
+    edges <- as(from, "SortedByQuerySelfHits")
+    ans_edgeL <- as.list(setNames(as(edges, "IntegerList"), ans_nodes))
     ans_edgeL <- lapply(ans_edgeL, function(edges) list(edges=edges))
 
     ans <- graphNEL(ans_nodes, ans_edgeL, edgemode="directed")
 
     ## 'edgeData' slot
-    edge_mcols <- mcols(sh)
+    edge_mcols <- mcols(edges)
     if (!is.null(edge_mcols)) {
         edge_mcols0 <- .attrData_as_DataFrame_or_NULL(ans@edgeData)
         col_to_preprend <- setdiff(colnames(edge_mcols0), colnames(edge_mcols))
@@ -355,104 +524,4 @@ setAs("graphNEL", "DGraph", .from_graphNEL_to_DGraph)
     ans
 }
 setAs("DGraph", "graphNEL", .from_DGraph_to_graphNEL)
-
-
-### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Show
-###
-
-.DGraph_summary <- function(object)
-{
-    object_nnode <- nnode(object)
-    object_len <- length(object)
-    object_mcols <- mcols(object, use.names=FALSE)
-    object_nmc <- if (is.null(object_mcols)) 0L else ncol(object_mcols)
-    paste0(classNameForDisplay(object), " object with ",
-           object_nnode, " node", ifelse(object_nnode == 1L, "", "s"), ", ",
-           object_len, " edge", ifelse(object_len == 1L, "", "s"), ", and ",
-           object_nmc, " metadata column", ifelse(object_nmc == 1L, "", "s"))
-}
-### S3/S4 combo for summary.DGraph
-summary.DGraph <- function(object, ...)
-    .DGraph_summary(object, ...)
-setMethod("summary", "DGraph", summary.DGraph)
-
-.from_DGraph_to_naked_character_matrix_for_display <- function(x)
-{
-    m <- cbind(fromNode=showAsCell(fromNode(x)),
-               from=showAsCell(from(x)),
-               rep.int(ifelse(is(x, "UGraph"), "<->", "->"), length(x)),
-               to=showAsCell(to(x)),
-               toNode=showAsCell(toNode(x)))
-    cbind_mcols_for_display(m, x)
-}
-setMethod("makeNakedCharacterMatrixForDisplay", "DGraph",
-    .from_DGraph_to_naked_character_matrix_for_display
-)
-
-.show_DGraph <- function(x, margin="", print.classinfo=FALSE)
-{
-    cat(margin, summary(x), ":\n", sep="")
-    ## makePrettyMatrixForCompactPrinting() assumes that head() and tail()
-    ## work on 'x'.
-    out <- makePrettyMatrixForCompactPrinting(x)
-    if (print.classinfo) {
-        .COL2CLASS <- c(
-            fromNode=class(x@nodes),
-            from="integer",
-            "",
-            to="integer",
-            toNode=class(x@nodes)
-        )
-        classinfo <- makeClassinfoRowForCompactPrinting(x, .COL2CLASS)
-        ## A sanity check, but this should never happen!
-        stopifnot(identical(colnames(classinfo), colnames(out)))
-        out <- rbind(classinfo, out)
-    }
-    if (nrow(out) != 0L)
-        rownames(out) <- paste0(margin, "  ", rownames(out))
-    ## We set 'max' to 'length(out)' to avoid the getOption("max.print")
-    ## limit that would typically be reached when 'showHeadLines' global
-    ## option is set to Inf.
-    print(out, quote=FALSE, right=TRUE, max=length(out))
-}
-
-setMethod("show", "DGraph",
-    function(object)
-        .show_DGraph(object, print.classinfo=TRUE)
-)
-
-
-### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### connComp()
-###
-
-### Always treats 'x' as an **undirected** graph.
-### Returns the connected components in an IntegerList object
-### where each list element is strictly sorted.
-.connComp_DGraph <- function(x)
-{
-    x <- union(x, t(x))
-    x_from <- from(x)
-    x_to <- to(x)
-    N <- nnode(x)
-    cid <- cid0 <- seq_len(N)  # cluster ids
-    repeat {
-        cid2 <- pmin(cid, selectHits(x, "first"))
-        if (identical(cid2, cid))
-            break
-        cid <- cid2
-        x <- Hits(x_from, cid[x_to], N, N)
-    }
-    unname(splitAsList(cid0, cid))
-}
-
-### Generic defined in the graph package.
-setMethod("connComp", "DGraph",
-    function(object) .connComp_DGraph(object)
-)
-
-setMethod("isConnected", "DGraph",
-    function(object) { length(connComp(object)) == 1L }
-)
 
