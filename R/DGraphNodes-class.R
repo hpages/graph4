@@ -45,17 +45,11 @@ setValidity2("DGraphNodes", .validate_DGraphNodes)
     new2("DGraphNodes", nodes, edges=edges, check=FALSE)
 }
 
-.from_DGraph_to_DGraphNodes <- function(from)
-{
-    edges <- as(from, "SelfHits")
-    .new_DGraphNodes(from@nodes, edges)
-}
+.from_DGraph_to_DGraphNodes <-
+    function(from) .new_DGraphNodes(nodes(from), edges(from))
 
-from_DGraphNodes_to_DGraph <- function(from)
-{
-    nodes <- as(from, "AnnotatedIDs")
-    new_DGraph(nodes, from@edges)
-}
+from_DGraphNodes_to_DGraph <-
+    function(from) new_DGraph(nodes(from), edges(from))
 
 ### High-level constructor.
 ### Accept a DGraph object and turn it into a DGraphNodes object.
@@ -85,11 +79,8 @@ DGraphNodes <- function(nodes, from=integer(0), to=integer(0), ...)
 ### implement it.
 ###
 
-setAs("DGraphNodes", "SelfHits", function(from) from@edges)
-setAs("DGraphNodes", "SortedByQuerySelfHits",
-    function(from) as(from@edges, "SortedByQuerySelfHits")
-)
-
+setMethod("numNodes", "DGraphNodes", function(object) numNodes(object@edges))
+setMethod("numEdges", "DGraphNodes", function(object) numEdges(object@edges))
 setMethod("from", "DGraphNodes", function(x) from(x@edges))
 setMethod("to", "DGraphNodes", function(x) to(x@edges))
 setMethod("nLnode", "DGraphNodes", function(x) nLnode(x@edges))
@@ -100,16 +91,15 @@ setMethod("countRnodeHits", "DGraphNodes", function(x) countRnodeHits(x@edges))
 setMethod("t", "DGraphNodes", function(x) {x@edges <- t(x@edges); x})
 setMethod("connComp", "DGraphNodes", function(object) connComp(object@edges))
 
+setAs("DGraphNodes", "SelfHits", function(from) from@edges)
+setAs("DGraphNodes", "SortedByQuerySelfHits",
+    function(from) as(from@edges, "SortedByQuerySelfHits")
+)
+
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Accessors
 ###
-
-### Generic defined in the graph package.
-setMethod("numNodes", "DGraphNodes", function(object) length(object))
-
-### Generic defined in the graph package.
-setMethod("numEdges", "DGraphNodes", function(object) length(object@edges))
 
 ### Generic defined in the graph package.
 setMethod("nodes", "DGraphNodes", function(object) as(object, "AnnotatedIDs"))
@@ -121,6 +111,9 @@ setReplaceMethod("nodes", "DGraphNodes",
         stop("IMPLEMENT ME!")
     }
 )
+
+### Generic defined in the graph package.
+setMethod("edges", "DGraphNodes", function(object) object@edges)
 
 setMethod("fromNode", "DGraphNodes", function(x) extractROWS(nodes(x), from(x)))
 

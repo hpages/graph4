@@ -5,9 +5,9 @@ import(BiocGenerics)
 import(S4Vectors)
 import(IRanges)
 import(graph)  # for generic functions numNodes(), numEdges(), nodes(),
-               # degree(), adjacencyMatrix(), etc... (but ideally these
-               # should be defined in BiocGenerics or maybe in a GraphGenerics
-               # package)
+               # edges(), degree(), adjacencyMatrix(), etc... (but ideally
+               # these should be defined in BiocGenerics or maybe in a
+               # GraphGenerics package)
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -63,7 +63,7 @@ exportMethods(
     from, to, nLnode, nRnode, nnode, countLnodeHits, countRnodeHits,
 
     ## Methods for generics defined in the graph package:
-    numNodes, numEdges, nodes, "nodes<-", degree,
+    numNodes, numEdges, nodes, "nodes<-", edges, degree,
     isDirected, edgemode, "edgemode<-", edgeMatrix,
     adjacencyMatrix, connComp, isConnected
 )

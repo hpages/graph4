@@ -88,11 +88,11 @@ DGraph <- function(nodes, from=integer(0), to=integer(0), ...)
 ### Accessors
 ###
 
-### Generic defined in the graph package.
-setMethod("numNodes", "DGraph", function(object) nnode(object))
-
-### Generic defined in the graph package.
-setMethod("numEdges", "DGraph", function(object) length(object))
+### The numNodes() and numEdges() generics are defined in the graph package.
+### For more generality, we define methods for SelfHits objects instead of
+### DGraph objects.
+setMethod("numNodes", "SelfHits", function(object) nnode(object))
+setMethod("numEdges", "SelfHits", function(object) length(object))
 
 ### Generic defined in the graph package.
 setMethod("nodes", "DGraph", function(object) object@nodes)
@@ -115,6 +115,9 @@ setReplaceMethod("nodes", "DGraph",
         object
     }
 )
+
+### Generic defined in the graph package.
+setMethod("edges", "DGraph", function(object) as(object, "SelfHits"))
 
 setGeneric("fromNode", function(x) standardGeneric("fromNode"))
 setMethod("fromNode", "DGraph", function(x) extractROWS(nodes(x), from(x)))

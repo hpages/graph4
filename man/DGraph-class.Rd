@@ -13,6 +13,8 @@
 \alias{nodes,DGraph-method}
 \alias{nodes<-}
 \alias{nodes<-,DGraph,ANY-method}
+\alias{edges}
+\alias{edges,DGraph-method}
 \alias{fromNode}
 \alias{fromNode,DGraph-method}
 \alias{toNode}
