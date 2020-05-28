@@ -212,26 +212,6 @@ setMethod("edgeMatrix", "DGraph",
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### adjacencyMatrix()
-###
-
-### Generic defined in the graph package.
-### Returns an ngCMatrix object (defined in Matrix package).
-setMethod("adjacencyMatrix", "DGraph",
-    function(object)
-    {
-        object_nodes <- nodes(object)
-        object_nnode <- NROW(object_nodes)
-        object_nodenames <- names(object_nodes)
-        ans_dim <- c(object_nnode, object_nnode)
-        ans_dimnames <- list(object_nodenames, object_nodenames)
-        sparseMatrix(from(object), to(object), dims=ans_dim,
-                     dimnames=ans_dimnames)
-    }
-)
-
-
-### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Coercion
 ###
 
@@ -244,27 +224,17 @@ setAs("SelfHits", "DGraph",
     }
 )
 
-### We provide a coercion method to go from ngCMatrix (defined in
-### Matrix package) to DGraph. Note that if 'x' is a square ngCMatrix
-### object, 'adjacencyMatrix(as(x, "DGraph"))' is guaranted to be
-### identical to 'x' (modulo the dimnames).
-setAs("ngCMatrix", "DGraph",
+setAs("DGraph", "DFrame",
     function(from)
     {
-        N <- nrow(from)
-        if (ncol(from) != N)
-            stop(wmsg(class(from), " object to coerce to DGraph ",
-                      "or DGraphNodes must be square"))
-        ans <- DGraph(N, from@i + 1L, rep.int(seq_len(N), diff(from@p)))
-        if (!is.null(rownames(from))) {
-            names(nodes(ans)) <- rownames(from)
-            return(ans)
-        }
-        if (!is.null(colnames(from))) {
-            names(nodes(ans)) <- colnames(from)
-            return(ans)
-        }
-        ans
+        from_mcols <- mcols(from, use.names=FALSE)
+        if (is.null(from_mcols))
+            from_mcols <- make_zero_col_DFrame(length(from))
+        listData <- list(fromNode=fromNode(from),
+                         from=from(from),
+                         to=to(from),
+                         toNode=toNode(from))
+        cbind(S4Vectors:::new_DataFrame(listData), from_mcols)
     }
 )
 
@@ -337,14 +307,59 @@ setMethod("show", "DGraph",
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### connComp()
+### Adjacency matrix
+###
+
+### Generic defined in the graph package.
+### Return an ngCMatrix object (defined in Matrix package).
+setMethod("adjacencyMatrix", "DGraph",
+    function(object)
+    {
+        object_nodes <- nodes(object)
+        object_nnode <- NROW(object_nodes)
+        object_nodenames <- names(object_nodes)
+        ans_dim <- c(object_nnode, object_nnode)
+        ans_dimnames <- list(object_nodenames, object_nodenames)
+        sparseMatrix(from(object), to(object), dims=ans_dim,
+                     dimnames=ans_dimnames)
+    }
+)
+
+setAs("DGraph", "ngCMatrix", function(from) adjacencyMatrix(from))
+
+### We provide a coercion method to go from ngCMatrix (defined in
+### Matrix package) to DGraph. Note that if 'x' is a square ngCMatrix
+### object, 'adjacencyMatrix(as(x, "DGraph"))' is guaranted to be
+### identical to 'x' (modulo the dimnames).
+.from_ngCMatrix_to_DGraph <- function(from)
+{
+    N <- nrow(from)
+    if (ncol(from) != N)
+        stop(wmsg(class(from), " object to coerce to DGraph ",
+                  "or DGraphNodes must be square"))
+    ans <- DGraph(N, from@i + 1L, rep.int(seq_len(N), diff(from@p)))
+    if (!is.null(rownames(from))) {
+        names(nodes(ans)) <- rownames(from)
+        return(ans)
+    }
+    if (!is.null(colnames(from))) {
+        names(nodes(ans)) <- colnames(from)
+        return(ans)
+    }
+    ans
+}
+setAs("ngCMatrix", "DGraph", .from_ngCMatrix_to_DGraph)
+
+
+### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Connected components
 ###
 ### connComp() is an S4 generic defined in the graph package.
 ###
 
 ### Always treats 'x' as an **undirected** graph.
-### Returns the connected components in an IntegerList object
-### where each list element is strictly sorted.
+### Return the connected components in an IntegerList object where each
+### list element is strictly sorted.
 .connComp_SelfHits <- function(x)
 {
     x <- union(x, t(x))

@@ -32,15 +32,17 @@
 \alias{edgeMatrix}
 \alias{edgeMatrix,DGraph-method}
 
-\alias{adjacencyMatrix}
-\alias{adjacencyMatrix,DGraph-method}
-
 \alias{coerce,SelfHits,DGraph-method}
-\alias{coerce,ngCMatrix,DGraph-method}
+\alias{coerce,DGraph,DFrame-method}
 
 \alias{summary.DGraph}
 \alias{summary,DGraph-method}
 \alias{show,DGraph-method}
+
+\alias{adjacencyMatrix}
+\alias{adjacencyMatrix,DGraph-method}
+\alias{coerce,DGraph,ngCMatrix-method}
+\alias{coerce,ngCMatrix,DGraph-method}
 
 \alias{connComp}
 \alias{connComp,SelfHits-method}
@@ -174,6 +176,18 @@ DGraph(nodes, from=integer(0), to=integer(0), ...)
   are preserved.
 }
 
+\section{Coercion}{
+  TODO
+}
+
+\section{Adjacency matrix}{
+  TODO
+}
+
+\section{Connected components}{
+  TODO
+}
+
 \section{Concatenation}{
   TODO (not supported yet)
 }
@@ -273,6 +287,10 @@ degree(dg1)
 as.data.frame(dg1)
 as(dg1, "DataFrame")
 
+## ---------------------------------------------------------------------
+## ADJACENCY MATRIX
+## ---------------------------------------------------------------------
+
 adjm <- adjacencyMatrix(dg1)
 adjm
 
@@ -282,6 +300,12 @@ as(adjm, "DGraph")
 ## 'adjacencyMatrix(as(x, "DGraph"))' is guaranted to be
 ## identical to 'x' (modulo the dimnames).
 stopifnot(identical(adjacencyMatrix(as(adjm, "DGraph")), adjm))
+
+## ---------------------------------------------------------------------
+## CONNECTED COMPONENTS
+## ---------------------------------------------------------------------
+
+connComp(dg1)
 
 ## ---------------------------------------------------------------------
 ## CONCATENATION
@@ -294,12 +318,6 @@ stopifnot(identical(adjacencyMatrix(as(adjm, "DGraph")), adjm))
 ## ---------------------------------------------------------------------
 
 ## TODO
-
-## ---------------------------------------------------------------------
-## CONNECTED COMPONENTS
-## ---------------------------------------------------------------------
-
-connComp(dg1)
 
 ## ---------------------------------------------------------------------
 ## COMPATIBILITY WITH graphNEL OBJECTS

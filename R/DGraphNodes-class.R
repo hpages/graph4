@@ -169,20 +169,6 @@ setMethod("edgeMatrix", "DGraphNodes",
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### adjacencyMatrix()
-###
-
-### Generic defined in the graph package.
-### Returns an ngCMatrix object (defined in Matrix package).
-### TODO: Current method for DGraph objects would work out-of-the-box on
-### a DGraphNodes object! So maybe just replace current method for DGraph
-### with method for DGraph_OR_DGraphNodes and get rid of the method below.
-setMethod("adjacencyMatrix", "DGraphNodes",
-    function(object) adjacencyMatrix(DGraph(object))
-)
-
-
-### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Coercion
 ###
 
@@ -194,6 +180,19 @@ setAs("SelfHits", "DGraphNodes",
         nodes <- AnnotatedIDs(seq_len(nnode(from)))
         edges <- as(from, "SelfHits")
         .new_DGraphNodes(nodes, edges)
+    }
+)
+
+### Main purpose of this coercion is to support the show() method below.
+### It's important that 'nodes(from)' does not get dismantled into various
+### columns.
+setAs("DGraphNodes", "DFrame",
+    function(from)
+    {
+        listData <- list(nodes=nodes(from),
+                         outDegree=outDegree(from),
+                         inDegree=inDegree(from))
+        S4Vectors:::new_DataFrame(listData)
     }
 )
 
@@ -219,23 +218,25 @@ summary.DGraphNodes <- function(object, ...)
     .DGraphNodes_summary(object, ...)
 setMethod("summary", "DGraphNodes", summary.DGraphNodes)
 
-.from_DGraphNodes_to_naked_character_matrix_for_display <- function(x)
+.from_DGraphNodes_to_naked_character_matrix_for_display <- function(xx)
 {
-    m <- cbind(nodes=showAsCell(nodes(x)),
-               outDegree=showAsCell(outDegree(x)),
-               inDegree=showAsCell(inDegree(x)))
-    cbind_mcols_for_display(m, x)
+    xx_nodes <- xx[ , "nodes"]
+    m <- cbind(nodes=showAsCell(xx_nodes),
+               outDegree=showAsCell(xx[ , "outDegree"]),
+               inDegree=showAsCell(xx[ , "inDegree"]))
+    cbind_mcols_for_display(m, xx_nodes)
 }
-setMethod("makeNakedCharacterMatrixForDisplay", "DGraphNodes",
-    .from_DGraphNodes_to_naked_character_matrix_for_display
-)
 
 .show_DGraphNodes <- function(x, margin="", print.classinfo=FALSE)
 {
     cat(margin, summary(x), ":\n", sep="")
-    ## makePrettyMatrixForCompactPrinting() assumes that head() and tail()
-    ## work on 'x'.
-    out <- makePrettyMatrixForCompactPrinting(x)
+    ## makePrettyMatrixForCompactPrinting(x) would call head() and tail()
+    ## on 'x' and this would alter the outDegree and inDegree of the nodes
+    ## that get displayed. The work around we use is to call
+    ## makePrettyMatrixForCompactPrinting() on 'as(x, "DFrame")' instead.
+    xx <- as(x, "DFrame")
+    out <- makePrettyMatrixForCompactPrinting(xx,
+               .from_DGraphNodes_to_naked_character_matrix_for_display)
     if (print.classinfo) {
         COL2CLASS <- c(
             nodes="AnnotatedIDs",
@@ -259,6 +260,25 @@ setMethod("show", "DGraphNodes",
     function(object)
         .show_DGraphNodes(object, print.classinfo=TRUE)
 )
+
+
+### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Adjacency matrix
+###
+
+### Generic defined in the graph package.
+### Return an ngCMatrix object (defined in Matrix package).
+### TODO: Current method for DGraph objects would work out-of-the-box on
+### a DGraphNodes object! So maybe just replace current method for DGraph
+### with method for DGraph_OR_DGraphNodes and get rid of the method below.
+setMethod("adjacencyMatrix", "DGraphNodes",
+    function(object) adjacencyMatrix(DGraph(object))
+)
+
+### TODO: Current method for DGraph objects would work out-of-the-box on
+### a DGraphNodes object! So maybe just replace current method for DGraph
+### with method for DGraph_OR_DGraphNodes and get rid of the method below.
+setAs("DGraphNodes", "ngCMatrix", function(from) as(DGraph(from), "ngCMatrix"))
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

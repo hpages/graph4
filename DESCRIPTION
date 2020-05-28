@@ -4,7 +4,7 @@ Description: Implements classes for representing and manipulating directed
 	and undirected graphs (DGraph and UGraph classes). Both the edges
 	and nodes of a DGraph or UGraph object can be annotated via the use
 	of "metadata columns".
-Version: 0.2.0
+Version: 0.2.1
 Encoding: UTF-8
 Author: Hervé Pagès <hpages@fredhutch.org>
 Maintainer: Hervé Pagès <hpages@fredhutch.org>
