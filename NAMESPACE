@@ -18,6 +18,9 @@ exportClasses(
     ## AnnotatedIDs-class.R:
     AnnotatedIDs,
 
+    ## Graph-class.R:
+    Graph,
+
     ## DGraph-class.R:
     DGraph, DGraphNodes,
 
@@ -31,13 +34,15 @@ exportClasses(
 ###
 
 S3method(summary, DGraph)
+S3method(summary, DGraphNodes)
 
 ### We also export them thru the export() directive so that (a) they can be
 ### called directly, (b) tab-completion on the name of the generic shows them,
 ### and (c) methods() doesn't asterisk them.
 
 export(
-    summary.DGraph
+    summary.DGraph,
+    summary.DGraphNodes
 )
 
 
@@ -78,7 +83,10 @@ export(
     AnnotatedIDs,
 
     ## DGraph-class.R:
-    DGraph, DGraphNodes,
+    DGraph,
+
+    ## DGraphNodes-class.R:
+    DGraphNodes,
 
     ## UGraph-class.R:
     UGraph,
@@ -96,7 +104,7 @@ export(
     ## AnnotatedIDs-class.R:
     ID,
 
-    ## DGraph-class.R:
+    ## Graph-class.R:
     fromNode, toNode,
     outDegree, inDegree
 )

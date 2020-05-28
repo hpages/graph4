@@ -39,7 +39,8 @@
                       "The package is needed by makeDGraphFromGO(). ",
                       "Please install it and try again."))
     if (missing(godb)) {
-        pkgenvir <- try(loadNamespace("GO.db"), silent=TRUE)
+        pkgenvir <- try(suppressPackageStartupMessages(loadNamespace("GO.db")),
+                        silent=TRUE)
         if (inherits(pkgenvir, "try-error"))
             stop(wmsg("Couldn't load the GO.db package. Please install ",
                       "the GO.db package and try again."))
@@ -71,9 +72,11 @@ makeDGraphFromGO <- function(godb)
 
     from <- match(parents[ , "_id"], terms[ , "_id"])
     to <- match(parents[ , "_parent_id"], terms[ , "_id"])
-    relation_levels <- c("is_a", "part_of", "regulates",
-                         "negatively_regulates", "positively_regulates")
-    relation <- factor(parents[ , "relationship_type"], levels=relation_levels)
+    relation <- parents[ , "relationship_type"]
+    expected_levels <- c("isa", "part of", "regulates",
+                         "negatively regulates", "positively regulates")
+    levels <- union(expected_levels, relation)
+    relation <- factor(relation, levels=levels)
 
     nodes <- AnnotatedIDs(terms[ , 2], terms[ , -(1:2)])
     DGraph(nodes, from=from, to=to, relation=relation)

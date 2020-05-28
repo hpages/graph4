@@ -8,7 +8,10 @@
 ### selecting a particular subset of edges (without touching the set of
 ### nodes).
 setClass("DGraph",
-    contains="SelfHits",
+    ## Graph must precede SelfHits so dispatch will pick up methods
+    ## defined for Graph objects over methods defined for SelfHits
+    ## objects (e.g. adjacencyMatrix()).
+    contains=c("Graph", "SelfHits"),
     representation(
         nodes="Vector"
     ),
@@ -88,16 +91,9 @@ DGraph <- function(nodes, from=integer(0), to=integer(0), ...)
 ### Accessors
 ###
 
-### The numNodes() and numEdges() generics are defined in the graph package.
-### For more generality, we define methods for SelfHits objects instead of
-### DGraph objects.
-setMethod("numNodes", "SelfHits", function(object) nnode(object))
-setMethod("numEdges", "SelfHits", function(object) length(object))
-
-### Generic defined in the graph package.
 setMethod("nodes", "DGraph", function(object) object@nodes)
 
-### Generic defined in the graph package.
+### "nodes<-" is an S4 generic defined in the graph package.
 setReplaceMethod("nodes", "DGraph",
     function(object, value)
     {
@@ -116,64 +112,13 @@ setReplaceMethod("nodes", "DGraph",
     }
 )
 
-### Generic defined in the graph package.
 setMethod("edges", "DGraph", function(object) as(object, "SelfHits"))
 
-setGeneric("fromNode", function(x) standardGeneric("fromNode"))
-setMethod("fromNode", "DGraph", function(x) extractROWS(nodes(x), from(x)))
-
-setGeneric("toNode", function(x) standardGeneric("toNode"))
-setMethod("toNode", "DGraph", function(x) extractROWS(nodes(x), to(x)))
-
-.make_node_labels <- function(nodes)
-{
-    labels <- ROWNAMES(nodes)
-    if (!is.null(labels))
-        return(labels)
-    ## Unlike as.character(), showAsCell() is guaranted to produce a
-    ## character vector **parallel** to its argument (i.e. with one
-    ## string per ROW). For example as.character() won't do the right
-    ## thing on a DataFrame or DNAString object.
-    showAsCell(nodes)
-}
-
-setGeneric("outDegree", function(object) standardGeneric("outDegree"))
-
-setMethod("outDegree", "DGraph",
-    function(object)
-    {
-        ans <- countLnodeHits(object)
-        names(ans) <- .make_node_labels(nodes(object))
-        ans
-    }
-)
-
-setGeneric("inDegree", function(object) standardGeneric("inDegree"))
-setMethod("inDegree", "DGraph",
-    function(object)
-    {
-        ans <- countRnodeHits(object)
-        names(ans) <- .make_node_labels(nodes(object))
-        ans
-    }
-)
-
-### Generic defined in the graph package.
-setMethod("degree", "ANY",
-    function(object) outDegree(object) + inDegree(object)
-)
-
-### Generic defined in the graph package.
 setMethod("isDirected", "DGraph",
     function(object) !is(object, "UGraph")
 )
 
-### Generic defined in the graph package.
-setMethod("edgemode", "ANY",
-    function(object) if (isDirected(object)) "directed" else "undirected"
-)
-
-### Generic defined in the graph package.
+### "edgemode<-" is an S4 generic defined in the graph package.
 setReplaceMethod("edgemode", c("DGraph", "ANY"),
     function(object, value)
     {
@@ -186,33 +131,6 @@ setReplaceMethod("edgemode", c("DGraph", "ANY"),
     }
 )
 
-.normalize_undirected_edges <- function(x)
-{
-    x_from <- from(x)
-    x_to <- to(x)
-    flip_idx <- which(x_from > x_to)
-    if (length(flip_idx) != 0L) {
-        tmp <- x_from[flip_idx]
-        x_from[flip_idx] <- x_to[flip_idx]
-        x_to[flip_idx] <- tmp
-    }
-    SelfHits(x_from, x_to, nnode=nnode(x))
-}
-
-### Generic defined in the graph package.
-setMethod("edgeMatrix", "DGraph",
-    function(object, duplicates=FALSE)
-    {
-        if (!isTRUEorFALSE(duplicates))
-            stop(wmsg("'duplicates' must be TRUE or FALSE"))
-        if (!(duplicates || isDirected(object))) {
-            object <- .normalize_undirected_edges(object)
-            object <- unique(object)
-        }
-        rbind(from=from(object), to=to(object))
-    }
-)
-
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Coercion
@@ -221,8 +139,8 @@ setMethod("edgeMatrix", "DGraph",
 setAs("SelfHits", "DGraph",
     function(from)
     {
-        nodes <- AnnotatedIDs(seq_len(nnode(from)))
         edges <- as(from, "SelfHits")
+        nodes <- AnnotatedIDs(seq_len(nnode(edges)))
         new_DGraph(nodes, edges)
     }
 )
@@ -230,14 +148,15 @@ setAs("SelfHits", "DGraph",
 setAs("DGraph", "DFrame",
     function(from)
     {
-        from_mcols <- mcols(from, use.names=FALSE)
-        if (is.null(from_mcols))
-            from_mcols <- make_zero_col_DFrame(length(from))
         listData <- list(fromNode=fromNode(from),
                          from=from(from),
                          to=to(from),
                          toNode=toNode(from))
-        cbind(S4Vectors:::new_DataFrame(listData), from_mcols)
+        ans <- S4Vectors:::new_DataFrame(listData)
+        from_mcols <- mcols(from, use.names=FALSE)
+        if (!is.null(from_mcols))
+            ans <- cbind(ans, from_mcols)
+        ans
     }
 )
 
@@ -313,82 +232,22 @@ setMethod("show", "DGraph",
 ### Adjacency matrix
 ###
 
-### Generic defined in the graph package.
-### Return an ngCMatrix object (defined in Matrix package).
-setMethod("adjacencyMatrix", "DGraph",
-    function(object)
-    {
-        object_nodes <- nodes(object)
-        object_nnode <- NROW(object_nodes)
-        object_nodenames <- names(object_nodes)
-        ans_dim <- c(object_nnode, object_nnode)
-        ans_dimnames <- list(object_nodenames, object_nodenames)
-        sparseMatrix(from(object), to(object), dims=ans_dim,
-                     dimnames=ans_dimnames)
-    }
-)
-
-setAs("DGraph", "ngCMatrix", function(from) adjacencyMatrix(from))
-
 ### We provide a coercion method to go from ngCMatrix (defined in
 ### Matrix package) to DGraph. Note that if 'x' is a square ngCMatrix
 ### object, 'adjacencyMatrix(as(x, "DGraph"))' is guaranted to be
 ### identical to 'x' (modulo the dimnames).
 .from_ngCMatrix_to_DGraph <- function(from)
 {
-    N <- nrow(from)
-    if (ncol(from) != N)
-        stop(wmsg(class(from), " object to coerce to DGraph ",
-                  "or DGraphNodes must be square"))
-    ans <- DGraph(N, from@i + 1L, rep.int(seq_len(N), diff(from@p)))
+    edges <- as(from, "SelfHits")
+    nodes <- AnnotatedIDs(seq_len(nnode(edges)))
     if (!is.null(rownames(from))) {
-        names(nodes(ans)) <- rownames(from)
-        return(ans)
+        names(nodes) <- rownames(from)
+    } else if (!is.null(colnames(from))) {
+        names(nodes) <- colnames(from)
     }
-    if (!is.null(colnames(from))) {
-        names(nodes(ans)) <- colnames(from)
-        return(ans)
-    }
-    ans
+    new_DGraph(nodes, edges)
 }
 setAs("ngCMatrix", "DGraph", .from_ngCMatrix_to_DGraph)
-
-
-### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Connected components
-###
-### connComp() is an S4 generic defined in the graph package.
-###
-
-### Always treats 'x' as an **undirected** graph.
-### Return the connected components in an IntegerList object where each
-### list element is strictly sorted.
-.connComp_SelfHits <- function(x)
-{
-    x <- union(x, t(x))
-    x_from <- from(x)
-    x_to <- to(x)
-    N <- nnode(x)
-    cid <- cid0 <- seq_len(N)  # cluster ids
-    repeat {
-        cid2 <- pmin(cid, selectHits(x, "first"))
-        if (identical(cid2, cid))
-            break
-        cid <- cid2
-        x <- Hits(x_from, cid[x_to], N, N)
-    }
-    unname(splitAsList(cid0, cid))
-}
-
-### For more generality, we define the method for SelfHits objects instead
-### of DGraph objects.
-setMethod("connComp", "SelfHits",
-    function(object) .connComp_SelfHits(object)
-)
-
-setMethod("isConnected", "ANY",
-    function(object) { length(connComp(object)) == 1L }
-)
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

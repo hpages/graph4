@@ -9,7 +9,7 @@
 ### selecting a particular subset of nodes. This means subsetting a
 ### DGraphNodes may drop some of its edges!
 setClass("DGraphNodes",
-    contains="AnnotatedIDs",
+    contains=c("Graph", "AnnotatedIDs"),
     representation(
         edges="SelfHits"
     )
@@ -79,13 +79,11 @@ DGraphNodes <- function(nodes, from=integer(0), to=integer(0), ...)
 ### implement it.
 ###
 
-setMethod("numNodes", "DGraphNodes", function(object) numNodes(object@edges))
-setMethod("numEdges", "DGraphNodes", function(object) numEdges(object@edges))
+setMethod("nnode", "DGraphNodes", function(x) nnode(x@edges))
 setMethod("from", "DGraphNodes", function(x) from(x@edges))
 setMethod("to", "DGraphNodes", function(x) to(x@edges))
 setMethod("nLnode", "DGraphNodes", function(x) nLnode(x@edges))
 setMethod("nRnode", "DGraphNodes", function(x) nRnode(x@edges))
-setMethod("nnode", "DGraphNodes", function(x) nnode(x@edges))
 setMethod("countLnodeHits", "DGraphNodes", function(x) countLnodeHits(x@edges))
 setMethod("countRnodeHits", "DGraphNodes", function(x) countRnodeHits(x@edges))
 setMethod("t", "DGraphNodes", function(x) {x@edges <- t(x@edges); x})
@@ -101,10 +99,9 @@ setAs("DGraphNodes", "SortedByQuerySelfHits",
 ### Accessors
 ###
 
-### Generic defined in the graph package.
 setMethod("nodes", "DGraphNodes", function(object) as(object, "AnnotatedIDs"))
 
-### Generic defined in the graph package.
+### "nodes<-" is an S4 generic defined in the graph package.
 setReplaceMethod("nodes", "DGraphNodes",
     function(object, value)
     {
@@ -112,33 +109,13 @@ setReplaceMethod("nodes", "DGraphNodes",
     }
 )
 
-### Generic defined in the graph package.
 setMethod("edges", "DGraphNodes", function(object) object@edges)
 
-setMethod("fromNode", "DGraphNodes", function(x) extractROWS(nodes(x), from(x)))
-
-setMethod("toNode", "DGraphNodes", function(x) extractROWS(nodes(x), to(x)))
-
-### TODO: Current method for DGraph objects would work out-of-the-box on
-### a DGraphNodes object! So maybe just replace current method for DGraph
-### with method for DGraph_OR_DGraphNodes and get rid of the method below.
-setMethod("outDegree", "DGraphNodes",
-    function(object) outDegree(DGraph(object))
-)
-
-### TODO: Current method for DGraph objects would work out-of-the-box on
-### a DGraphNodes object! So maybe just replace current method for DGraph
-### with method for DGraph_OR_DGraphNodes and get rid of the method below.
-setMethod("inDegree", "DGraphNodes",
-    function(object) inDegree(DGraph(object))
-)
-
-### Generic defined in the graph package.
 setMethod("isDirected", "DGraphNodes",
     function(object) !is(object, "UGraphNodes")
 )
 
-### Generic defined in the graph package.
+### "edgemode<-" is an S4 generic defined in the graph package.
 setReplaceMethod("edgemode", c("DGraphNodes", "ANY"),
     function(object, value)
     {
@@ -151,30 +128,12 @@ setReplaceMethod("edgemode", c("DGraphNodes", "ANY"),
     }
 )
 
-### Generic defined in the graph package.
-### TODO: Current method for DGraph objects would work out-of-the-box on
-### a DGraphNodes object! So maybe just replace current method for DGraph
-### with method for DGraph_OR_DGraphNodes and get rid of the method below.
-setMethod("edgeMatrix", "DGraphNodes",
-    function(object, duplicates=FALSE)
-        edgeMatrix(DGraph(object), duplicates=duplicates)
-)
-
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Coercion
 ###
 
 setAs("ANY", "DGraphNodes", function(from) DGraphNodes(as(from, "DGraph")))
-
-setAs("SelfHits", "DGraphNodes",
-    function(from)
-    {
-        nodes <- AnnotatedIDs(seq_len(nnode(from)))
-        edges <- as(from, "SelfHits")
-        .new_DGraphNodes(nodes, edges)
-    }
-)
 
 ### Main purpose of this coercion is to support the show() method below.
 ### It's important that 'nodes(from)' does not get dismantled into various
@@ -256,30 +215,8 @@ setMethod("show", "DGraphNodes",
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Adjacency matrix
-###
-
-### Generic defined in the graph package.
-### Return an ngCMatrix object (defined in Matrix package).
-### TODO: Current method for DGraph objects would work out-of-the-box on
-### a DGraphNodes object! So maybe just replace current method for DGraph
-### with method for DGraph_OR_DGraphNodes and get rid of the method below.
-setMethod("adjacencyMatrix", "DGraphNodes",
-    function(object) adjacencyMatrix(DGraph(object))
-)
-
-### TODO: Current method for DGraph objects would work out-of-the-box on
-### a DGraphNodes object! So maybe just replace current method for DGraph
-### with method for DGraph_OR_DGraphNodes and get rid of the method below.
-setAs("DGraphNodes", "ngCMatrix", function(from) as(DGraph(from), "ngCMatrix"))
-
-
-### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Compatibility with graphNEL objects
 ###
 
-### TODO: Current method for DGraph objects would work out-of-the-box on
-### a DGraphNodes object! So maybe just replace current method for DGraph
-### with method for DGraph_OR_DGraphNodes and get rid of the method below.
 setAs("DGraphNodes", "graphNEL", function(from) as(DGraph(from), "graphNEL"))
 

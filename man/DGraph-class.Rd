@@ -6,9 +6,9 @@
 \alias{DGraph}
 
 \alias{numNodes}
-\alias{numNodes,DGraph-method}
+\alias{numNodes,ANY-method}
 \alias{numEdges}
-\alias{numEdges,DGraph-method}
+\alias{numEdges,Graph-method}
 \alias{nodes}
 \alias{nodes,DGraph-method}
 \alias{nodes<-}
@@ -16,23 +16,23 @@
 \alias{edges}
 \alias{edges,DGraph-method}
 \alias{fromNode}
-\alias{fromNode,DGraph-method}
+\alias{fromNode,Graph-method}
 \alias{toNode}
-\alias{toNode,DGraph-method}
+\alias{toNode,Graph-method}
 \alias{outDegree}
-\alias{outDegree,DGraph-method}
+\alias{outDegree,Graph-method}
 \alias{inDegree}
-\alias{inDegree,DGraph-method}
+\alias{inDegree,Graph-method}
 \alias{degree}
-\alias{degree,ANY-method}
+\alias{degree,Graph-method}
 \alias{isDirected}
 \alias{isDirected,DGraph-method}
 \alias{edgemode}
-\alias{edgemode,ANY-method}
+\alias{edgemode,Graph-method}
 \alias{edgemode<-}
 \alias{edgemode<-,DGraph,ANY-method}
 \alias{edgeMatrix}
-\alias{edgeMatrix,DGraph-method}
+\alias{edgeMatrix,Graph-method}
 
 \alias{coerce,SelfHits,DGraph-method}
 \alias{coerce,DGraph,DFrame-method}
@@ -42,8 +42,8 @@
 \alias{show,DGraph-method}
 
 \alias{adjacencyMatrix}
-\alias{adjacencyMatrix,DGraph-method}
-\alias{coerce,DGraph,ngCMatrix-method}
+\alias{adjacencyMatrix,Graph-method}
+\alias{coerce,Graph,ngCMatrix-method}
 \alias{coerce,ngCMatrix,DGraph-method}
 
 \alias{connComp}
