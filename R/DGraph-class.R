@@ -112,8 +112,6 @@ setReplaceMethod("nodes", "DGraph",
     }
 )
 
-setMethod("edges", "DGraph", function(object) as(object, "SelfHits"))
-
 setMethod("isDirected", "DGraph",
     function(object) !is(object, "UGraph")
 )
@@ -320,7 +318,7 @@ setAs("graphNEL", "DGraph", .from_graphNEL_to_DGraph)
 .make_graphNEL_nodes <- function(from)
 {
     from_nodes <- nodes(from)
-    ans_nodes <- .make_node_labels(from_nodes)
+    ans_nodes <- make_node_labels(from_nodes)
     ## The graphNEL() constructor function will fail (with error "Node names
     ## may not be duplicated") if the character vector supplied to its 'nodes'
     ## argument contains duplicates. By checking this upfront, we can provide

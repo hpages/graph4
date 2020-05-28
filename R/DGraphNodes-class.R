@@ -73,26 +73,12 @@ DGraphNodes <- function(nodes, from=integer(0), to=integer(0), ...)
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### SelfHits API
+### Core SelfHits API
 ###
-### Unlike DGraph objects, DGraphNodes don't inherit the SelfHits API so we
-### implement it.
-###
-
-setMethod("nnode", "DGraphNodes", function(x) nnode(x@edges))
-setMethod("from", "DGraphNodes", function(x) from(x@edges))
-setMethod("to", "DGraphNodes", function(x) to(x@edges))
-setMethod("nLnode", "DGraphNodes", function(x) nLnode(x@edges))
-setMethod("nRnode", "DGraphNodes", function(x) nRnode(x@edges))
-setMethod("countLnodeHits", "DGraphNodes", function(x) countLnodeHits(x@edges))
-setMethod("countRnodeHits", "DGraphNodes", function(x) countRnodeHits(x@edges))
-setMethod("t", "DGraphNodes", function(x) {x@edges <- t(x@edges); x})
-setMethod("connComp", "DGraphNodes", function(object) connComp(object@edges))
 
 setAs("DGraphNodes", "SelfHits", function(from) from@edges)
-setAs("DGraphNodes", "SortedByQuerySelfHits",
-    function(from) as(from@edges, "SortedByQuerySelfHits")
-)
+
+setMethod("t", "DGraphNodes", function(x) {x@edges <- t(x@edges); x})
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -108,8 +94,6 @@ setReplaceMethod("nodes", "DGraphNodes",
         stop("IMPLEMENT ME!")
     }
 )
-
-setMethod("edges", "DGraphNodes", function(object) object@edges)
 
 setMethod("isDirected", "DGraphNodes",
     function(object) !is(object, "UGraphNodes")

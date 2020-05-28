@@ -5,28 +5,33 @@
 \alias{DGraph-class}
 \alias{DGraph}
 
-\alias{numNodes}
-\alias{numNodes,ANY-method}
-\alias{numEdges}
-\alias{numEdges,Graph-method}
 \alias{nodes}
 \alias{nodes,DGraph-method}
 \alias{nodes<-}
 \alias{nodes<-,DGraph,ANY-method}
 \alias{edges}
-\alias{edges,DGraph-method}
-\alias{fromNode}
-\alias{fromNode,Graph-method}
-\alias{toNode}
-\alias{toNode,Graph-method}
+\alias{edges,Graph-method}
+\alias{isDirected}
+\alias{isDirected,DGraph-method}
+
+\alias{from,Graph-method}
+\alias{to,Graph-method}
+
+\alias{numNodes}
+\alias{numNodes,ANY-method}
+\alias{numEdges}
+\alias{numEdges,Graph-method}
 \alias{outDegree}
 \alias{outDegree,Graph-method}
 \alias{inDegree}
 \alias{inDegree,Graph-method}
 \alias{degree}
-\alias{degree,Graph-method}
-\alias{isDirected}
-\alias{isDirected,DGraph-method}
+\alias{degree,ANY-method}
+
+\alias{fromNode}
+\alias{fromNode,Graph-method}
+\alias{toNode}
+\alias{toNode,Graph-method}
 \alias{edgemode}
 \alias{edgemode,Graph-method}
 \alias{edgemode<-}
@@ -47,7 +52,7 @@
 \alias{coerce,ngCMatrix,DGraph-method}
 
 \alias{connComp}
-\alias{connComp,SelfHits-method}
+\alias{connComp,Graph-method}
 \alias{isConnected}
 \alias{isConnected,ANY-method}
 
