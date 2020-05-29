@@ -60,7 +60,7 @@ table(out_deg)  # 1 node has no parents
 
 ## The GO.db package introduces an artifical term called "all"
 ## that is the common parent of the three sub-ontologies:
-nodes(gograph)[nodes(gograph) == "all"]
+nodes(gograph)[out_deg == 0]
 
 ## To find the direct children of the "all" term, we select the edges
 ## that go **to** that node. This shows us the top-level term of each

@@ -261,3 +261,15 @@ setMethod("edgeMatrix", "Graph",
     }
 )
 
+
+### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### dropNodes()
+###
+### dropNodes() is a new S4 generic introduced by the graph4 package.
+### Equivalent to igraph::delete_vertices() and graph::removeNode().
+###
+
+setGeneric("dropNodes", signature="x",
+    function(x, nodes) standardGeneric("dropNodes")
+)
+

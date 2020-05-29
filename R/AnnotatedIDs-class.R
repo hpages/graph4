@@ -72,6 +72,8 @@ setMethod("names", "AnnotatedIDs", function(x) ROWNAMES(x@ID))
 setReplaceMethod("names", "AnnotatedIDs",
     function(x, value)
     {
+        ## TODO: Add `ROWNAMES<-` generic to S4Vectors (we already have the
+        ## ROWNAMES() getter but no setter) and use it here.
         if (length(dim(x@ID)) < 2L) {
             names(x@ID) <- value
         } else {
@@ -154,6 +156,20 @@ setMethod("pcompare", c("AnnotatedIDs", "AnnotatedIDs"),
     function(x, y) pcompare(x@ID, y@ID)
 )
 
+setMethod("match", c("AnnotatedIDs", "ANY"),
+    function(x, table, nomatch=NA_integer_, incomparables=NULL, ...)
+    {
+        x <- x@ID
+        callGeneric()
+    }
+)
+setMethod("match", c("ANY", "AnnotatedIDs"),
+    function(x, table, nomatch=NA_integer_, incomparables=NULL, ...)
+    {
+        table <- table@ID
+        callGeneric()
+    }
+)
 setMethod("match", c("AnnotatedIDs", "AnnotatedIDs"),
     function(x, table, nomatch=NA_integer_, incomparables=NULL, ...)
     {

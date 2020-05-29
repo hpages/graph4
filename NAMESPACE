@@ -106,13 +106,15 @@ export(
 
     ## Graph-class.R:
     fromNode, toNode,
-    outDegree, inDegree
+    outDegree, inDegree,
+    dropNodes
 )
 
 ### Exactly the same list as above.
 exportMethods(
     ID,
     fromNode, toNode,
-    outDegree, inDegree
+    outDegree, inDegree,
+    dropNodes
 )
 

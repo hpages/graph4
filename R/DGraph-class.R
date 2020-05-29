@@ -42,19 +42,14 @@ setValidity2("DGraph", .validate_DGraph)
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Constructor
+### make_annotated_nodes()
+###
+### Make sure the user-supplied nodes are represented as a Vector derivative.
+### Wrap them in an AnnotatedIDs object if necessary e.g. if they are supplied
+### as an ordinary vector.
 ###
 
-### Low-level constructor.
-new_DGraph <- function(nodes, edges)
-{
-    ## 'nodes' and 'edges' are trusted.
-    new2("DGraph", edges, nodes=nodes, check=FALSE)
-}
-
-### Return a Vector derivative (wrap ordinary vectors in an AnnotatedIDs
-### object).
-normarg_nodes <- function(nodes)
+.normarg_nodes <- function(nodes)
 {
     if (is(nodes, "Vector"))
         return(nodes)
@@ -66,11 +61,39 @@ normarg_nodes <- function(nodes)
     AnnotatedIDs(nodes)
 }
 
+make_annotated_nodes <- function(nodes, ...)
+{
+    ans <- .normarg_nodes(nodes)
+    mcols <- DataFrame(..., check.names=FALSE)
+    if (length(mcols) != 0L) {
+        ans_mcols <- mcols(ans)
+        if (length(ans_mcols) != 0L)
+            mcols <- cbind(ans_mcols, mcols)
+        mcols(ans) <- mcols
+    }
+    ans
+}
+
+
+### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Constructor
+###
+
+### Low-level constructor.
+new_DGraph <- function(nodes, edges)
+{
+    ## 'nodes' and 'edges' are trusted.
+    new2("DGraph", edges, nodes=nodes, check=FALSE)
+}
+
 ### High-level constructor.
 ### Accept a DGraphNodes object and turn it into a DGraph object.
 ### Using DGraph() and DGraphNodes() is the standard way to switch back and
 ### forth between DGraph and DGraphNodes. The transformation is very fast and
 ### lossless.
+### Arguments passed thru the ellipsis (...) are metadata columns to set on
+### the **edges** of the object. Note that they will be considered to be the
+### metadata columns of the DGraphNodes object itself.
 DGraph <- function(nodes, from=integer(0), to=integer(0), ...)
 {
     if (is(nodes, "DGraphNodes")) {
@@ -81,7 +104,7 @@ DGraph <- function(nodes, from=integer(0), to=integer(0), ...)
                       "when 'nodes' is a DGraphNodes object"))
         return(from_DGraphNodes_to_DGraph(nodes))
     }
-    nodes <- normarg_nodes(nodes)
+    nodes <- make_annotated_nodes(nodes)
     edges <- SelfHits(from, to, nnode=NROW(nodes), ...)
     new_DGraph(nodes, edges)
 }
@@ -99,9 +122,9 @@ setReplaceMethod("nodes", "DGraph",
     {
         object_nnode <- nnode(object)
         if (is.null(value)) {
-            value <- AnnotatedIDs(seq_len(object_nnode))
+            value <- make_annotated_nodes(object_nnode)
         } else {
-            value <- normarg_nodes(value)
+            value <- make_annotated_nodes(value)
             if (NROW(value) != object_nnode)
                 stop(wmsg("this ", class(object), " object ",
                           "expects ", object_nnode, " node",
@@ -138,7 +161,7 @@ setAs("SelfHits", "DGraph",
     function(from)
     {
         edges <- as(from, "SelfHits")
-        nodes <- AnnotatedIDs(seq_len(nnode(edges)))
+        nodes <- make_annotated_nodes(nnode(edges))
         new_DGraph(nodes, edges)
     }
 )
@@ -200,12 +223,13 @@ setMethod("makeNakedCharacterMatrixForDisplay", "DGraph",
     ## work on 'x'.
     out <- makePrettyMatrixForCompactPrinting(x)
     if (print.classinfo) {
+        x_nodes <- nodes(x)
         COL2CLASS <- c(
-            fromNode=class(x@nodes),
+            fromNode=class(x_nodes)[[1L]],
             from="integer",
             "",
             to="integer",
-            toNode=class(x@nodes)
+            toNode=class(x_nodes)[[1L]]
         )
         classinfo <- makeClassinfoRowForCompactPrinting(x, COL2CLASS)
         ## A sanity check, but this should never happen!
@@ -237,7 +261,7 @@ setMethod("show", "DGraph",
 .from_ngCMatrix_to_DGraph <- function(from)
 {
     edges <- as(from, "SelfHits")
-    nodes <- AnnotatedIDs(seq_len(nnode(edges)))
+    nodes <- make_annotated_nodes(nnode(edges))
     if (!is.null(rownames(from))) {
         names(nodes) <- rownames(from)
     } else if (!is.null(colnames(from))) {
@@ -304,7 +328,7 @@ setAs("ngCMatrix", "DGraph", .from_ngCMatrix_to_DGraph)
     ans_to <- m[2L, ]
     edges_mcols <- .attrData_as_DataFrame_or_NULL(from@edgeData)
     nodes_mcols <- .attrData_as_DataFrame_or_NULL(from@nodeData)
-    ans_nodes <- AnnotatedIDs(from@nodes, nodes_mcols)
+    ans_nodes <- make_annotated_nodes(from@nodes, nodes_mcols)
     ans <- DGraph(ans_nodes, ans_from, ans_to, edges_mcols)
 
     metadata(ans) <- list(edgeData_defaults=from@edgeData@defaults,

@@ -20,7 +20,8 @@
 \alias{pcompare,AnnotatedIDs,ANY-method}
 \alias{pcompare,ANY,AnnotatedIDs-method}
 \alias{pcompare,AnnotatedIDs,AnnotatedIDs-method}
-
+\alias{match,AnnotatedIDs,ANY-method}
+\alias{match,ANY,AnnotatedIDs-method}
 \alias{match,AnnotatedIDs,AnnotatedIDs-method}
 \alias{selfmatch,AnnotatedIDs-method}
 \alias{xtfrm,AnnotatedIDs-method}

@@ -9,10 +9,24 @@
 ### selecting a particular subset of nodes. This means subsetting a
 ### DGraphNodes may drop some of its edges!
 setClass("DGraphNodes",
-    contains=c("Graph", "AnnotatedIDs"),
+    contains=c("Graph", "Vector"),
     representation(
+        nodes="Vector",
         edges="SelfHits"
     )
+)
+
+
+### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### vertical_slot_names()
+###
+
+### Combine the new "vertical slots" with those of the parent class. Make
+### sure to put the new vertical slots **first**. See R/bindROWS.R file in
+### the S4Vectors package for what slots should or should not be considered
+### "vertical".
+setMethod("vertical_slot_names", "DGraphNodes",
+    function(x) c("nodes", callNextMethod())
 )
 
 
@@ -22,11 +36,23 @@ setClass("DGraphNodes",
 
 .validate_DGraphNodes <- function(x)
 {
+    ## 'nodes' slot
+    if (!is(x@nodes, "Vector"))
+        return("'nodes' slot must be a Vector derivative")
+    if (is(x@nodes, "DGraphNodes"))
+        return("'nodes' slot cannot be a DGraphNodes object")
+
     ## 'edges' slot
-    if (class(x@edges) != "SelfHits")
+    if (class(x@edges)[[1L]] != "SelfHits")
         return("'edges' slot must be of class SelfHits")
-    if (nnode(x@edges) != length(x))
+    if (nnode(x@edges) != NROW(x@nodes))
         return("'edges' slot must have one node per element in 'x'")
+
+    ## 'elementMetadata' slot: must never be used i.e. must be NULL at all
+    ## time (the metadata columns of a DGraphNodes are the metadata columns
+    ## of its nodes)
+    if (!is.null(x@elementMetadata))
+        return("'elementMetadata' slot must be NULL")
 
     TRUE
 }
@@ -41,8 +67,7 @@ setValidity2("DGraphNodes", .validate_DGraphNodes)
 ### Low-level constructor.
 .new_DGraphNodes <- function(nodes, edges)
 {
-    ## 'nodes' and 'edges' are trusted.
-    new2("DGraphNodes", nodes, edges=edges, check=FALSE)
+    new2("DGraphNodes", nodes=nodes, edges=edges, check=FALSE)
 }
 
 .from_DGraph_to_DGraphNodes <-
@@ -56,6 +81,9 @@ from_DGraphNodes_to_DGraph <-
 ### Using DGraph() and DGraphNodes() is the standard way to switch back and
 ### forth between DGraph and DGraphNodes. The transformation is very fast and
 ### lossless.
+### Arguments passed thru the ellipsis (...) are metadata columns to set on
+### the **nodes** of the object. Note that they will be considered to be the
+### metadata columns of the DGraphNodes object itself.
 DGraphNodes <- function(nodes, from=integer(0), to=integer(0), ...)
 {
     if (is(nodes, "DGraph")) {
@@ -66,8 +94,8 @@ DGraphNodes <- function(nodes, from=integer(0), to=integer(0), ...)
                       "when 'nodes' is a DGraph object"))
         return(.from_DGraph_to_DGraphNodes(nodes))
     }
-    nodes <- normarg_nodes(nodes)
-    edges <- SelfHits(from, to, nnode=NROW(nodes), ...)
+    nodes <- make_annotated_nodes(nodes, ...)
+    edges <- SelfHits(from, to, nnode=NROW(nodes))
     .new_DGraphNodes(nodes, edges)
 }
 
@@ -85,13 +113,45 @@ setMethod("t", "DGraphNodes", function(x) {x@edges <- t(x@edges); x})
 ### Accessors
 ###
 
-setMethod("nodes", "DGraphNodes", function(object) as(object, "AnnotatedIDs"))
+setMethod("nodes", "DGraphNodes", function(object) object@nodes)
 
 ### "nodes<-" is an S4 generic defined in the graph package.
 setReplaceMethod("nodes", "DGraphNodes",
     function(object, value)
     {
         stop("IMPLEMENT ME!")
+    }
+)
+
+### The names and metadata columns of a DGraphNodes object are the names
+### and metadata columns of its nodes.
+
+setMethod("names", "DGraphNodes", function(x) ROWNAMES(x@nodes))
+
+setReplaceMethod("names", "DGraphNodes",
+    function(x, value)
+    {
+        ## TODO: Add `ROWNAMES<-` generic to S4Vectors (we already have the
+        ## ROWNAMES() getter but no setter) and use it here.
+        if (length(dim(x@nodes)) < 2L) {
+            names(x@nodes) <- value
+        } else {
+            rownames(x@nodes) <- value
+        }
+        x
+    }
+)
+
+setMethod("elementMetadata", "DGraphNodes",
+    function(x, use.names=TRUE, ...)
+        elementMetadata(x@nodes, use.names=use.names, ...)
+)
+
+setReplaceMethod("elementMetadata", "DGraphNodes",
+    function (x, ..., value)
+    {
+        elementMetadata(x@nodes, ...) <- value
+        x
     }
 )
 
@@ -154,13 +214,12 @@ summary.DGraphNodes <- function(object, ...)
     .DGraphNodes_summary(object, ...)
 setMethod("summary", "DGraphNodes", summary.DGraphNodes)
 
-.from_DGraphNodes_to_naked_character_matrix_for_display <- function(xx)
+.from_DGraphNodes_to_naked_character_matrix_for_display <- function(x)
 {
-    xx_nodes <- xx[ , "nodes"]
-    m <- cbind(nodes=showAsCell(xx_nodes),
-               outDegree=showAsCell(xx[ , "outDegree"]),
-               inDegree=showAsCell(xx[ , "inDegree"]))
-    cbind_mcols_for_display(m, xx_nodes)
+    m <- cbind(nodes=showAsCell(nodes(x)),
+               outDegree=showAsCell(outDegree(x)),
+               inDegree=showAsCell(inDegree(x)))
+    cbind_mcols_for_display(m, x)
 }
 
 .show_DGraphNodes <- function(x, margin="", print.classinfo=FALSE)
@@ -168,14 +227,14 @@ setMethod("summary", "DGraphNodes", summary.DGraphNodes)
     cat(margin, summary(x), ":\n", sep="")
     ## makePrettyMatrixForCompactPrinting(x) would call head() and tail()
     ## on 'x' and this would alter the outDegree and inDegree of the nodes
-    ## that get displayed. The work around we use is to call
-    ## makePrettyMatrixForCompactPrinting() on 'as(x, "DFrame")' instead.
-    xx <- as(x, "DFrame")
-    out <- makePrettyMatrixForCompactPrinting(xx,
-               .from_DGraphNodes_to_naked_character_matrix_for_display)
+    ## that get displayed. The work around is to turn the **full** object
+    ## into a "naked matrix for display" and to pass that matrix to
+    ## makePrettyMatrixForCompactPrinting().
+    m <- .from_DGraphNodes_to_naked_character_matrix_for_display(x)
+    out <- makePrettyMatrixForCompactPrinting(m)
     if (print.classinfo) {
         COL2CLASS <- c(
-            nodes="AnnotatedIDs",
+            nodes=class(nodes(x))[[1L]],
             outDegree="integer",
             inDegree="integer"
         )
