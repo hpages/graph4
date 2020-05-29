@@ -3,18 +3,9 @@
 ### -------------------------------------------------------------------------
 
 
-### The same bundle of nodes and edges as DGraph.
-### HOWEVER, now viewed as a **vector of nodes** i.e. the length of
-### the object is its number of nodes and subsetting the object means
-### selecting a particular subset of nodes. This means subsetting a
-### DGraphNodes may drop some of its edges!
-setClass("DGraphNodes",
-    contains=c("Graph", "Vector"),
-    representation(
-        nodes="Vector",
-        edges="SelfHits"
-    )
-)
+### See R/NodesAndEdges-class.R for a quick overview of the semantic of
+### DGraphNodes objects.
+setClass("DGraphNodes", contains="NodesAndEdges")
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -31,33 +22,14 @@ setMethod("vertical_slot_names", "DGraphNodes",
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Validity
+### .from_NodesAndEdges_to_DGraphNodes()
 ###
 
-.validate_DGraphNodes <- function(x)
+.from_NodesAndEdges_to_DGraphNodes <- function(from)
 {
-    ## 'nodes' slot
-    if (!is(x@nodes, "Vector"))
-        return("'nodes' slot must be a Vector derivative")
-    if (is(x@nodes, "DGraphNodes"))
-        return("'nodes' slot cannot be a DGraphNodes object")
-
-    ## 'edges' slot
-    if (class(x@edges)[[1L]] != "SelfHits")
-        return("'edges' slot must be of class SelfHits")
-    if (nnode(x@edges) != NROW(x@nodes))
-        return("'edges' slot must have one node per element in 'x'")
-
-    ## 'elementMetadata' slot: must never be used i.e. must be NULL at all
-    ## time (the metadata columns of a DGraphNodes are the metadata columns
-    ## of its nodes)
-    if (!is.null(x@elementMetadata))
-        return("'elementMetadata' slot must be NULL")
-
-    TRUE
+    class(from) <- "DGraphNodes"
+    from
 }
-
-setValidity2("DGraphNodes", .validate_DGraphNodes)
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -67,14 +39,9 @@ setValidity2("DGraphNodes", .validate_DGraphNodes)
 ### Low-level constructor.
 .new_DGraphNodes <- function(nodes, edges)
 {
+    ## 'nodes' and 'edges' are trusted.
     new2("DGraphNodes", nodes=nodes, edges=edges, check=FALSE)
 }
-
-.from_DGraph_to_DGraphNodes <-
-    function(from) .new_DGraphNodes(nodes(from), edges(from))
-
-from_DGraphNodes_to_DGraph <-
-    function(from) new_DGraph(nodes(from), edges(from))
 
 ### High-level constructor.
 ### Accept a DGraph object and turn it into a DGraphNodes object.
@@ -86,13 +53,13 @@ from_DGraphNodes_to_DGraph <-
 ### metadata columns of the DGraphNodes object itself.
 DGraphNodes <- function(nodes, from=integer(0), to=integer(0), ...)
 {
-    if (is(nodes, "DGraph")) {
+    if (class(nodes)[[1L]] == "NodesAndEdges" || is(nodes, "DGraph")) {
         if (!(identical(from, integer(0)) &&
               identical(to, integer(0)) &&
               length(list(...)) == 0L))
-            stop(wmsg("additional arguments are not allowed ",
-                      "when 'nodes' is a DGraph object"))
-        return(.from_DGraph_to_DGraphNodes(nodes))
+            stop(wmsg("additional arguments are not allowed when ",
+                      "calling DGraphNodes() on a ", class(nodes), " object"))
+        return(.from_NodesAndEdges_to_DGraphNodes(nodes))
     }
     nodes <- make_annotated_nodes(nodes, ...)
     edges <- SelfHits(from, to, nnode=NROW(nodes))
@@ -101,30 +68,11 @@ DGraphNodes <- function(nodes, from=integer(0), to=integer(0), ...)
 
 
 ### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Core SelfHits API
-###
-
-setAs("DGraphNodes", "SelfHits", function(from) from@edges)
-
-setMethod("t", "DGraphNodes", function(x) {x@edges <- t(x@edges); x})
-
-
-### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### Accessors
 ###
 
-setMethod("nodes", "DGraphNodes", function(object) object@nodes)
-
-### "nodes<-" is an S4 generic defined in the graph package.
-setReplaceMethod("nodes", "DGraphNodes",
-    function(object, value)
-    {
-        stop("IMPLEMENT ME!")
-    }
-)
-
 ### The names and metadata columns of a DGraphNodes object are the names
-### and metadata columns of its nodes.
+### and metadata columns of its **nodes**.
 
 setMethod("names", "DGraphNodes", function(x) ROWNAMES(x@nodes))
 
@@ -177,18 +125,21 @@ setReplaceMethod("edgemode", c("DGraphNodes", "ANY"),
 ### Coercion
 ###
 
-setAs("ANY", "DGraphNodes", function(from) DGraphNodes(as(from, "DGraph")))
+setAs("ANY", "DGraphNodes",
+    function(from) DGraphNodes(as(from, "NodesAndEdges"))
+)
 
-### Main purpose of this coercion is to support the show() method below.
-### It's important that 'nodes(from)' does not get dismantled into various
-### columns.
 setAs("DGraphNodes", "DFrame",
     function(from)
     {
         listData <- list(nodes=nodes(from),
                          outDegree=outDegree(from),
                          inDegree=inDegree(from))
-        S4Vectors:::new_DataFrame(listData)
+        ans <- S4Vectors:::new_DataFrame(listData)
+        from_mcols <- mcols(from, use.names=FALSE)
+        if (!is.null(from_mcols))
+            ans <- cbind(ans, from_mcols)
+        ans
     }
 )
 
@@ -252,14 +203,6 @@ setMethod("summary", "DGraphNodes", summary.DGraphNodes)
 }
 
 setMethod("show", "DGraphNodes",
-    function(object)
-        .show_DGraphNodes(object, print.classinfo=TRUE)
+    function(object) .show_DGraphNodes(object, print.classinfo=TRUE)
 )
-
-
-### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-### Compatibility with graphNEL objects
-###
-
-setAs("DGraphNodes", "graphNEL", function(from) as(DGraph(from), "graphNEL"))
 

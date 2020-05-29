@@ -21,6 +21,9 @@ exportClasses(
     ## Graph-class.R:
     Graph,
 
+    ## NodesAndEdges-class.R:
+    NodesAndEdges,
+
     ## DGraph-class.R:
     DGraph, DGraphNodes,
 
@@ -33,6 +36,8 @@ exportClasses(
 ### Export S3 methods
 ###
 
+S3method(as.data.frame, Graph)
+
 S3method(summary, DGraph)
 S3method(summary, DGraphNodes)
 
@@ -41,6 +46,8 @@ S3method(summary, DGraphNodes)
 ### and (c) methods() doesn't asterisk them.
 
 export(
+    as.data.frame.Graph,
+
     summary.DGraph,
     summary.DGraphNodes
 )
@@ -61,10 +68,12 @@ exportMethods(
     show, coerce,
 
     ## Methods for generics defined in the BiocGenerics package:
-    match, t,
+    as.data.frame, match, t,
 
     ## Methods for generics defined in the S4Vectors package:
-    vertical_slot_names, showAsCell, pcompare, selfmatch,
+    showAsCell, vertical_slot_names,
+    elementMetadata, "elementMetadata<-",
+    pcompare, selfmatch,
     from, to, nLnode, nRnode, nnode, countLnodeHits, countRnodeHits,
 
     ## Methods for generics defined in the graph package:

@@ -41,8 +41,10 @@ setMethod("edges", "Graph", function(object) as(object, "SelfHits"))
 ### We provide default methods for the full core SelfHits API except for t().
 ###
 
-### In order to be as performant as possible, we avoid coercion to SelfHits
-### if 'x' derives from SelfHits (e.g. 'x' is a DGraph object).
+### In order to be as efficient as possible, we avoid coercion to SelfHits
+### if 'x' is a Graph derivative that also derives from SelfHits (used to
+### be the case for DGraph objects in the early days of the graph4 package
+### when DGraph was a subclass of SelfHits).
 .as_SelfHits <- function(x) if (is(x, "SelfHits")) x else as(x, "SelfHits")
 
 if (FALSE) {
@@ -272,4 +274,17 @@ setMethod("edgeMatrix", "Graph",
 setGeneric("dropNodes", signature="x",
     function(x, nodes) standardGeneric("dropNodes")
 )
+
+
+### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Other conveniences
+###
+
+### S3/S4 combo for as.data.frame.Graph
+as.data.frame.Graph <- function(x, row.names=NULL, optional=FALSE, ...)
+{
+    x <- as(x, "DFrame")
+    as.data.frame(x, row.names=row.names, optional=optional, ...)
+}
+setMethod("as.data.frame", "Graph", as.data.frame.Graph)
 

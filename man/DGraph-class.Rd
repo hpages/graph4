@@ -5,17 +5,23 @@
 \alias{DGraph-class}
 \alias{DGraph}
 
+\alias{vertical_slot_names,DGraph-method}
+
 \alias{nodes}
-\alias{nodes,DGraph-method}
+\alias{nodes,NodesAndEdges-method}
 \alias{nodes<-}
-\alias{nodes<-,DGraph,ANY-method}
+\alias{nodes<-,NodesAndEdges,ANY-method}
 \alias{edges}
-\alias{edges,Graph-method}
+\alias{edges,NodesAndEdges-method}
+\alias{elementMetadata,DGraph-method}
+\alias{elementMetadata<-,DGraph-method}
+
 \alias{isDirected}
 \alias{isDirected,DGraph-method}
 
 \alias{from,Graph-method}
 \alias{to,Graph-method}
+\alias{t,NodesAndEdges-method}
 
 \alias{numNodes}
 \alias{numNodes,ANY-method}
@@ -39,7 +45,7 @@
 \alias{edgeMatrix}
 \alias{edgeMatrix,Graph-method}
 
-\alias{coerce,SelfHits,DGraph-method}
+\alias{coerce,ANY,DGraph-method}
 \alias{coerce,DGraph,DFrame-method}
 
 \alias{summary.DGraph}
@@ -49,23 +55,24 @@
 \alias{adjacencyMatrix}
 \alias{adjacencyMatrix,Graph-method}
 \alias{coerce,Graph,ngCMatrix-method}
-\alias{coerce,ngCMatrix,DGraph-method}
+\alias{coerce,ngCMatrix,NodesAndEdges-method}
 
 \alias{connComp}
 \alias{connComp,Graph-method}
 \alias{isConnected}
 \alias{isConnected,ANY-method}
 
-\alias{coerce,graphNEL,DGraph-method}
-\alias{coerce,DGraph,graphNEL-method}
+\alias{coerce,graphNEL,NodesAndEdges-method}
+\alias{coerce,NodesAndEdges,graphNEL-method}
 
 \title{DGraph objects}
 
 \description{
   The DGraph class is a container for representing and manipulating a
   \emph{directed graph}. A DGraph object is a vector of edges, that is,
-  the length of the object is the number of edges and the elements in
-  the object are the edges.
+  the length of the object is its number of edges and the vector elements
+  are the edges. Subsetting a DGraph object means selecting a particular
+  subset of edges. This does not alter its set of nodes.
 }
 
 \usage{
