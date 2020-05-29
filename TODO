@@ -1,0 +1,49 @@
+- Consider making the 'nodes' slot vector_OR_Vector (instead of Vector) for
+  consistency with the Factor class defined in the S4Vectors package.
+
+- droplevels() should work on Factor objects (implement this in S4Vectors).
+
+- Consider making fromNode(x) and toNode(x) return a Factor. E.g.
+
+    Factor(levels=nodes(x), index=from(x))
+
+  instead of extractROWS(nodes(x), from(x)).
+
+- Implement dropNodes(). Are we happy with the name? Or should it be
+  deleteNodes() or removeNodes() instead?
+  Then maybe reintroduce dropNodes() but now it would drop unused nodes
+  like droplevels() does on a factor.
+
+- Fix subsetting of DGraphNodes objects (must drop edges that are indicent to
+  dropped nodes).
+
+- Implement
+
+    makeDGraphFromPackageDependencies(pkgs=NULL,
+                  repos=BiocManager::repositories(),
+                  which=c("Depends", "Imports", "LinkingTo"),
+                  type=c("source", "mac.binary", "win.binary"))
+
+  By default, i.e. if no arguments are specified, it builds the graph for
+  all Bioconductor source packages.
+  Nodes are packages and they should be annotated with the repository that
+  they are coming from in addition to other things like package version,
+  maintainer, etc... See 'fields' arg of available.packages() and
+  tools::write_PACKAGES().
+  Edges should be annotated with a factor which has the levels specified
+  thru the 'which' argument. This is analog to the "relation" metadata
+  column on the DGraph returned by makeDGraphFromGO().
+
+- Implement c() method for DGraph objects with the following semantic:
+  on DGraph objects 'x' and 'y', c(x, y) merges the nodes (like it does
+  with the levels of Factor objects) and concatenates the edges.
+  See bindROWS() method for Factor objects.
+
+  No need to support c() on DGraphNodes objects at the moment (not clear what
+  it should do). Maybe implement a dummy method for these objects that just
+  raises an error with a useful error message.
+
+  Mixing DGraph objects with DGraphNodes objects should not be allowed.
+
+- Add "package level" man page (?graph4).
+
