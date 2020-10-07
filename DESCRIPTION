@@ -6,8 +6,8 @@ Description: Implements classes for representing and manipulating directed
 	of "metadata columns".
 Version: 0.3.0
 Encoding: UTF-8
-Author: Hervé Pagès <hpages@fredhutch.org>
-Maintainer: Hervé Pagès <hpages@fredhutch.org>
+Author: Hervé Pagès
+Maintainer: Hervé Pagès <hpages.on.github@gmail.com>
 biocViews: Infrastructure, DataRepresentation, GraphAndNetwork, Annotation,
 	GenomeAnnotation
 Depends: methods, Matrix, BiocGenerics, S4Vectors (>= 0.25.14),
