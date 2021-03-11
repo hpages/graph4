@@ -45,5 +45,8 @@
 
   Mixing DGraph objects with DGraphNodes objects should not be allowed.
 
+- Add capability to import an OBO file (e.g. from the Gene Ontology or
+  Sequence Ontology) as a DGraph object.
+
 - Add "package level" man page (?graph4).
 
